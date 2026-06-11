@@ -1,85 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { menuPool, type Ingredient } from "../data/menus";
+import { sideDishPool, type SideDish } from "../data/sideDishes";
 
 const days = ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"];
 
-type Ingredient = {
-  name: string;
-  category: string;
-  amount: number;
-  unit: string;
-};
-
 const categoryOrder = ["肉・魚", "野菜", "卵・豆腐・乳製品", "調味料", "その他"];
-
-const sampleMenus: Record<string, { menu: string; ingredients: Ingredient[] }> = {
-  月曜日: {
-    menu: "親子丼",
-    ingredients: [
-      { name: "鶏もも肉", category: "肉・魚", amount: 150, unit: "g" },
-      { name: "卵", category: "卵・豆腐・乳製品", amount: 1, unit: "個" },
-      { name: "玉ねぎ", category: "野菜", amount: 0.5, unit: "個" },
-      { name: "ご飯", category: "その他", amount: 0.5, unit: "合" },
-    ],
-  },
-  火曜日: {
-    menu: "豚の生姜焼き",
-    ingredients: [
-      { name: "豚肉", category: "肉・魚", amount: 150, unit: "g" },
-      { name: "玉ねぎ", category: "野菜", amount: 0.5, unit: "個" },
-      { name: "しょうが", category: "調味料", amount: 0.25, unit: "かけ" },
-      { name: "キャベツ", category: "野菜", amount: 0.1, unit: "玉" },
-    ],
-  },
-  水曜日: {
-    menu: "鮭のホイル焼き",
-    ingredients: [
-      { name: "鮭", category: "肉・魚", amount: 1, unit: "切れ" },
-      { name: "しめじ", category: "野菜", amount: 0.5, unit: "パック" },
-      { name: "玉ねぎ", category: "野菜", amount: 0.5, unit: "個" },
-      { name: "バター", category: "卵・豆腐・乳製品", amount: 10, unit: "g" },
-    ],
-  },
-  木曜日: {
-    menu: "麻婆豆腐",
-    ingredients: [
-      { name: "豆腐", category: "卵・豆腐・乳製品", amount: 0.5, unit: "丁" },
-      { name: "ひき肉", category: "肉・魚", amount: 100, unit: "g" },
-      { name: "長ねぎ", category: "野菜", amount: 0.5, unit: "本" },
-      { name: "豆板醤", category: "調味料", amount: 0.25, unit: "個" },
-    ],
-  },
-  金曜日: {
-    menu: "ハンバーグ",
-    ingredients: [
-      { name: "合いびき肉", category: "肉・魚", amount: 150, unit: "g" },
-      { name: "玉ねぎ", category: "野菜", amount: 0.5, unit: "個" },
-      { name: "パン粉", category: "その他", amount: 0.25, unit: "袋" },
-      { name: "卵", category: "卵・豆腐・乳製品", amount: 0.5, unit: "個" },
-    ],
-  },
-  土曜日: {
-    menu: "カレー",
-    ingredients: [
-      { name: "豚肉", category: "肉・魚", amount: 150, unit: "g" },
-      { name: "じゃがいも", category: "野菜", amount: 1, unit: "個" },
-      { name: "にんじん", category: "野菜", amount: 0.5, unit: "本" },
-      { name: "玉ねぎ", category: "野菜", amount: 0.5, unit: "個" },
-      { name: "カレールー", category: "調味料", amount: 0.25, unit: "箱" },
-    ],
-  },
-  日曜日: {
-    menu: "鍋",
-    ingredients: [
-      { name: "白菜", category: "野菜", amount: 0.1, unit: "玉" },
-      { name: "豚肉", category: "肉・魚", amount: 150, unit: "g" },
-      { name: "豆腐", category: "卵・豆腐・乳製品", amount: 0.5, unit: "丁" },
-      { name: "長ねぎ", category: "野菜", amount: 0.5, unit: "本" },
-      { name: "しめじ", category: "野菜", amount: 0.5, unit: "パック" },
-    ],
-  },
-};
 
 export default function Home() {
   const [showResult, setShowResult] = useState(false);
@@ -89,18 +16,21 @@ export default function Home() {
 
   const [selectedDays, setSelectedDays] = useState<string[]>(days);
   const [includedDays, setIncludedDays] = useState<string[]>(days);
-
+  const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>(categoryOrder);
 
-  const servingCount = adultCount + childCount * 0.5;
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const toggleCategory = (category: string) => {
-    setOpenCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((item) => item !== category)
-        : [...prev, category]
-    );
-  };
+  const [generatedMenus, setGeneratedMenus] = useState<
+    {
+      day: string;
+      menu: string;
+      ingredients: Ingredient[];
+      sideDishes: SideDish[];
+    }[]
+  >([]);
+
+  const servingCount = adultCount + childCount * 0.5;
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -124,17 +54,79 @@ export default function Home() {
     );
   };
 
-  const selectedMenus = days
-    .filter((day) => selectedDays.includes(day))
-    .map((day) => ({
-      day,
-      menu: sampleMenus[day].menu,
-      ingredients: sampleMenus[day].ingredients,
-    }));
+  const toggleIngredient = (ingredientName: string) => {
+    setCheckedIngredients((prev) =>
+      prev.includes(ingredientName)
+        ? prev.filter((item) => item !== ingredientName)
+        : [...prev, ingredientName]
+    );
+  };
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((item) => item !== category)
+        : [...prev, category]
+    );
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((item) => item !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const pickSideDishes = (needs: string[]) => {
+    const matchedSideDishes = sideDishPool.filter((sideDish) =>
+      sideDish.tags.some((tag) => needs.includes(tag))
+    );
+
+    const candidates =
+      matchedSideDishes.length > 0 ? matchedSideDishes : sideDishPool;
+
+    return [...candidates].sort(() => Math.random() - 0.5).slice(0, 2);
+  };
+
+  const generateMenus = () => {
+    const targetDays = days.filter((day) => selectedDays.includes(day));
+
+    const matchedMenus = menuPool.filter((menu) =>
+      selectedTags.every((tag) => menu.tags.includes(tag))
+    );
+
+    const candidateMenus = matchedMenus.length >= targetDays.length
+      ? matchedMenus
+      : menuPool;
+
+    const shuffledMenus = [...candidateMenus].sort(() => Math.random() - 0.5);
+
+    const menus = targetDays.map((day, index) => {
+      const selectedMenu = shuffledMenus[index % shuffledMenus.length];
+
+      return {
+        day,
+        menu: selectedMenu.name,
+        ingredients: selectedMenu.ingredients,
+        sideDishes: pickSideDishes(selectedMenu.sideDishNeeds),
+      };
+    });
+
+    setGeneratedMenus(menus);
+    setIncludedDays(targetDays);
+    setCheckedIngredients([]);
+    setShowResult(true);
+  };
+
+  const selectedMenus = generatedMenus;
 
   const shoppingList = selectedMenus
     .filter((item) => includedDays.includes(item.day))
-    .flatMap((item) => item.ingredients)
+    .flatMap((item) => [
+      ...item.ingredients,
+      ...item.sideDishes.flatMap((sideDish) => sideDish.ingredients ?? []),
+    ])
     .reduce<Ingredient[]>((list, ingredient) => {
       const calculatedAmount = ingredient.amount * servingCount;
 
@@ -166,30 +158,17 @@ export default function Home() {
   const formatAmount = (amount: number, unit: string) => {
     const roundedAmount = Math.round(amount * 10) / 10;
 
-    if (roundedAmount === 0.25) {
-      return `1/4${unit}`;
-    }
-
-    if (roundedAmount === 0.5) {
-      return `1/2${unit}`;
-    }
-
-    if (roundedAmount === 0.75) {
-      return `3/4${unit}`;
-    }
-
-    if (Number.isInteger(roundedAmount)) {
-      return `${roundedAmount}${unit}`;
-    }
+    if (roundedAmount === 0.25) return `1/4${unit}`;
+    if (roundedAmount === 0.5) return `1/2${unit}`;
+    if (roundedAmount === 0.75) return `3/4${unit}`;
 
     return `${roundedAmount}${unit}`;
   };
 
-  const copyShoppingList = async () => {
-    const text = groupedShoppingList
+  const makeShoppingListText = () => {
+    return groupedShoppingList
       .map((group) => {
         const items = group.ingredients
-          .filter((ingredient) => !checkedIngredients.includes(ingredient.name))
           .map(
             (ingredient) =>
               `・${ingredient.name} ${formatAmount(
@@ -202,43 +181,20 @@ export default function Home() {
         return `【${group.category}】\n${items}`;
       })
       .join("\n\n");
+  };
 
-    await navigator.clipboard.writeText(text);
+  const copyShoppingList = async () => {
+    await navigator.clipboard.writeText(makeShoppingListText());
     alert("買い物リストをコピーしました！");
   };
 
   const shareToLine = () => {
-    const text = groupedShoppingList
-      .map((group) => {
-        const items = group.ingredients
-          .filter((ingredient) => !checkedIngredients.includes(ingredient.name))
-          .map(
-            (ingredient) =>
-              `・${ingredient.name} ${formatAmount(
-                ingredient.amount,
-                ingredient.unit
-              )}`
-          )
-          .join("\n");
-
-        return `【${group.category}】\n${items}`;
-      })
-      .join("\n\n");
-
-    const url = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+    const url = `https://line.me/R/msg/text/?${encodeURIComponent(
+      makeShoppingListText()
+    )}`;
     window.open(url, "_blank");
   };
 
-  const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
-
-
-  const toggleIngredient = (ingredientName: string) => {
-    setCheckedIngredients((prev) =>
-      prev.includes(ingredientName)
-        ? prev.filter((item) => item !== ingredientName)
-        : [...prev, ingredientName]
-    );
-  };
   return (
     <main className="min-h-screen bg-gray-100 p-6 text-gray-900">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
@@ -306,7 +262,11 @@ export default function Home() {
             {["節約", "時短", "がっつり", "ダイエット", "子ども向け"].map(
               (item) => (
                 <label key={item} className="flex items-center gap-2">
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    checked={selectedTags.includes(item)}
+                    onChange={() => toggleTag(item)}
+                  />
                   <span>{item}</span>
                 </label>
               )
@@ -315,7 +275,7 @@ export default function Home() {
         </div>
 
         <button
-          onClick={() => setShowResult(true)}
+          onClick={generateMenus}
           className="w-full bg-orange-500 text-white p-3 rounded font-bold hover:bg-orange-600"
         >
           今週の献立を作る
@@ -337,6 +297,9 @@ export default function Home() {
                     <div>
                       <p className="font-semibold">{item.day}</p>
                       <p>{item.menu}</p>
+                      <p className="text-sm text-gray-600">
+                        副菜：{item.sideDishes.map((sideDish) => sideDish.name).join("、")}
+                      </p>
                     </div>
 
                     <label className="flex items-center gap-2 text-sm">
@@ -381,7 +344,9 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
-                            const isChecked = checkedIngredients.includes(ingredient.name);
+                            const isChecked = checkedIngredients.includes(
+                              ingredient.name
+                            );
 
                             return (
                               <li
@@ -390,21 +355,26 @@ export default function Home() {
                               >
                                 <label
                                   className={`flex items-center justify-between gap-4 rounded p-2 cursor-pointer ${isChecked
-                                      ? "bg-gray-200 text-gray-500 line-through"
-                                      : ""
+                                    ? "bg-gray-200 text-gray-500 line-through"
+                                    : ""
                                     }`}
                                 >
                                   <div className="flex items-center gap-2">
                                     <input
                                       type="checkbox"
                                       checked={isChecked}
-                                      onChange={() => toggleIngredient(ingredient.name)}
+                                      onChange={() =>
+                                        toggleIngredient(ingredient.name)
+                                      }
                                     />
                                     <span>{ingredient.name}</span>
                                   </div>
 
                                   <span className="font-semibold">
-                                    {formatAmount(ingredient.amount, ingredient.unit)}
+                                    {formatAmount(
+                                      ingredient.amount,
+                                      ingredient.unit
+                                    )}
                                   </span>
                                 </label>
                               </li>
@@ -415,6 +385,7 @@ export default function Home() {
                     </div>
                   );
                 })}
+
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     onClick={copyShoppingList}

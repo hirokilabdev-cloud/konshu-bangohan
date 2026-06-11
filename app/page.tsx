@@ -175,6 +175,16 @@ export default function Home() {
     return `${roundedAmount}${unit}`;
   };
 
+  const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
+
+
+  const toggleIngredient = (ingredientName: string) => {
+    setCheckedIngredients((prev) =>
+      prev.includes(ingredientName)
+        ? prev.filter((item) => item !== ingredientName)
+        : [...prev, ingredientName]
+    );
+  };
   return (
     <main className="min-h-screen bg-gray-100 p-6 text-gray-900">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
@@ -302,11 +312,29 @@ export default function Home() {
                       {group.category}
                     </h3>
 
-                    <ul className="list-disc pl-6">
+                    <ul className="space-y-2">
                       {group.ingredients.map((ingredient) => (
-                        <li key={`${ingredient.name}-${ingredient.unit}`}>
-                          {ingredient.name}{" "}
-                          {formatAmount(ingredient.amount, ingredient.unit)}
+                        <li
+                          key={`${ingredient.name}-${ingredient.unit}`}
+                          className="list-none"
+                        >
+                          <label
+                            className={`flex items-center gap-2 rounded p-2 cursor-pointer ${checkedIngredients.includes(ingredient.name)
+                                ? "bg-gray-200 text-gray-500 line-through"
+                                : ""
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checkedIngredients.includes(ingredient.name)}
+                              onChange={() => toggleIngredient(ingredient.name)}
+                            />
+
+                            <span>
+                              {ingredient.name}{" "}
+                              {formatAmount(ingredient.amount, ingredient.unit)}
+                            </span>
+                          </label>
                         </li>
                       ))}
                     </ul>

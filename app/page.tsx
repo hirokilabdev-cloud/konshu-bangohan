@@ -175,6 +175,50 @@ export default function Home() {
     return `${roundedAmount}${unit}`;
   };
 
+  const copyShoppingList = async () => {
+    const text = groupedShoppingList
+      .map((group) => {
+        const items = group.ingredients
+          .filter((ingredient) => !checkedIngredients.includes(ingredient.name))
+          .map(
+            (ingredient) =>
+              `・${ingredient.name} ${formatAmount(
+                ingredient.amount,
+                ingredient.unit
+              )}`
+          )
+          .join("\n");
+
+        return `【${group.category}】\n${items}`;
+      })
+      .join("\n\n");
+
+    await navigator.clipboard.writeText(text);
+    alert("買い物リストをコピーしました！");
+  };
+
+  const shareToLine = () => {
+    const text = groupedShoppingList
+      .map((group) => {
+        const items = group.ingredients
+          .filter((ingredient) => !checkedIngredients.includes(ingredient.name))
+          .map(
+            (ingredient) =>
+              `・${ingredient.name} ${formatAmount(
+                ingredient.amount,
+                ingredient.unit
+              )}`
+          )
+          .join("\n");
+
+        return `【${group.category}】\n${items}`;
+      })
+      .join("\n\n");
+
+    const url = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
   const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
 
 
@@ -313,33 +357,49 @@ export default function Home() {
                     </h3>
 
                     <ul className="space-y-2">
-                      {group.ingredients.map((ingredient) => (
-                        <li
-                          key={`${ingredient.name}-${ingredient.unit}`}
-                          className="list-none"
-                        >
-                          <label
-                            className={`flex items-center gap-2 rounded p-2 cursor-pointer ${checkedIngredients.includes(ingredient.name)
-                                ? "bg-gray-200 text-gray-500 line-through"
-                                : ""
-                              }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checkedIngredients.includes(ingredient.name)}
-                              onChange={() => toggleIngredient(ingredient.name)}
-                            />
+                      {group.ingredients.map((ingredient) => {
+                        const isChecked = checkedIngredients.includes(ingredient.name);
 
-                            <span>
-                              {ingredient.name}{" "}
-                              {formatAmount(ingredient.amount, ingredient.unit)}
-                            </span>
-                          </label>
-                        </li>
-                      ))}
+                        return (
+                          <li key={`${ingredient.name}-${ingredient.unit}`} className="list-none">
+                            <label
+                              className={`flex items-center justify-between gap-4 rounded p-2 cursor-pointer ${isChecked ? "bg-gray-200 text-gray-500 line-through" : ""
+                                }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleIngredient(ingredient.name)}
+                                />
+                                <span>{ingredient.name}</span>
+                              </div>
+
+                              <span className="font-semibold">
+                                {formatAmount(ingredient.amount, ingredient.unit)}
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    onClick={copyShoppingList}
+                    className="rounded bg-gray-800 p-3 font-bold text-white hover:bg-gray-900"
+                  >
+                    買い物リストをコピー
+                  </button>
+
+                  <button
+                    onClick={shareToLine}
+                    className="rounded bg-green-500 p-3 font-bold text-white hover:bg-green-600"
+                  >
+                    LINEで共有
+                  </button>
+                </div>
               </div>
             )}
           </div>

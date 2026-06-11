@@ -90,7 +90,17 @@ export default function Home() {
   const [selectedDays, setSelectedDays] = useState<string[]>(days);
   const [includedDays, setIncludedDays] = useState<string[]>(days);
 
+  const [openCategories, setOpenCategories] = useState<string[]>(categoryOrder);
+
   const servingCount = adultCount + childCount * 0.5;
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((item) => item !== category)
+        : [...prev, category]
+    );
+  };
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -350,41 +360,61 @@ export default function Home() {
               </p>
             ) : (
               <div className="space-y-4">
-                {groupedShoppingList.map((group) => (
-                  <div key={group.category}>
-                    <h3 className="font-bold border-b pb-1 mb-2">
-                      {group.category}
-                    </h3>
+                {groupedShoppingList.map((group) => {
+                  const isOpen = openCategories.includes(group.category);
 
-                    <ul className="space-y-2">
-                      {group.ingredients.map((ingredient) => {
-                        const isChecked = checkedIngredients.includes(ingredient.name);
+                  return (
+                    <div key={group.category}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(group.category)}
+                        className="flex w-full items-center justify-between border-b pb-1 mb-2 font-bold"
+                      >
+                        <span>
+                          {isOpen ? "▼" : "▶"} {group.category}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {group.ingredients.length}件
+                        </span>
+                      </button>
 
-                        return (
-                          <li key={`${ingredient.name}-${ingredient.unit}`} className="list-none">
-                            <label
-                              className={`flex items-center justify-between gap-4 rounded p-2 cursor-pointer ${isChecked ? "bg-gray-200 text-gray-500 line-through" : ""
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => toggleIngredient(ingredient.name)}
-                                />
-                                <span>{ingredient.name}</span>
-                              </div>
+                      {isOpen && (
+                        <ul className="space-y-2">
+                          {group.ingredients.map((ingredient) => {
+                            const isChecked = checkedIngredients.includes(ingredient.name);
 
-                              <span className="font-semibold">
-                                {formatAmount(ingredient.amount, ingredient.unit)}
-                              </span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ))}
+                            return (
+                              <li
+                                key={`${ingredient.name}-${ingredient.unit}`}
+                                className="list-none"
+                              >
+                                <label
+                                  className={`flex items-center justify-between gap-4 rounded p-2 cursor-pointer ${isChecked
+                                      ? "bg-gray-200 text-gray-500 line-through"
+                                      : ""
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => toggleIngredient(ingredient.name)}
+                                    />
+                                    <span>{ingredient.name}</span>
+                                  </div>
+
+                                  <span className="font-semibold">
+                                    {formatAmount(ingredient.amount, ingredient.unit)}
+                                  </span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     onClick={copyShoppingList}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { menuPool, type Ingredient } from "../data/menus";
 import { sideDishPool, type SideDish } from "../data/sideDishes";
 
@@ -23,6 +23,9 @@ export default function Home() {
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
 
+  const [favoriteMenus, setFavoriteMenus] = useState<string[]>([]);
+  const [preferFavorites, setPreferFavorites] = useState(false);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -33,6 +36,30 @@ export default function Home() {
   >([]);
 
   const servingCount = adultCount + childCount * 0.5;
+
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem("favoriteMenus");
+
+    if (savedFavorites) {
+      setFavoriteMenus(JSON.parse(savedFavorites));
+    }
+  }, []);
+
+  /**
+   * お気に入り切替関数
+   * @param menuName 
+   */
+  const toggleFavoriteMenu = (menuName: string) => {
+    setFavoriteMenus((prev) => {
+      const nextFavorites = prev.includes(menuName)
+        ? prev.filter((item) => item !== menuName)
+        : [...prev, menuName];
+
+      localStorage.setItem("favoriteMenus", JSON.stringify(nextFavorites));
+
+      return nextFavorites;
+    });
+  };
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -100,21 +127,38 @@ export default function Home() {
   };
 
   const pickRandomMenu = (excludeMenuNames: string[] = []) => {
+    // 重視項目タグに一致するメニューを抽出
     const matchedMenus = menuPool.filter((menu) =>
       selectedTags.every((tag) => menu.tags.includes(tag))
     );
 
-    const candidateMenus =
-      matchedMenus.length > 0 ? matchedMenus : menuPool;
+    // タグ一致メニューがあればそれをベースにする。なければ全メニュー
+    const baseCandidates = matchedMenus.length > 0 ? matchedMenus : menuPool;
 
-    const filteredMenus = candidateMenus.filter(
+    // まだ今週使っていない通常候補
+    const normalCandidates = baseCandidates.filter(
       (menu) => !excludeMenuNames.includes(menu.name)
     );
 
-    const finalCandidates =
-      filteredMenus.length > 0 ? filteredMenus : candidateMenus;
+    // まだ今週使っていないお気に入り候補
+    const favoriteCandidates = normalCandidates.filter((menu) =>
+      favoriteMenus.includes(menu.name)
+    );
 
-    return finalCandidates[Math.floor(Math.random() * finalCandidates.length)];
+    // お気に入り優先ONなら70%でお気に入りを使う
+    const shouldUseFavorite =
+      preferFavorites && favoriteCandidates.length > 0 && Math.random() < 0.7;
+
+    // 70%判定に当たったらお気に入り候補、外れたら通常候補
+    const candidates = shouldUseFavorite ? favoriteCandidates : normalCandidates;
+
+    // 候補が空の場合は、タグ一致候補に戻す
+    const fallbackCandidates =
+      candidates.length > 0 ? candidates : baseCandidates;
+
+    return fallbackCandidates[
+      Math.floor(Math.random() * fallbackCandidates.length)
+    ];
   };
 
   const generateMenus = () => {
@@ -321,6 +365,15 @@ export default function Home() {
               )
             )}
           </div>
+
+          <label className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={preferFavorites}
+              onChange={() => setPreferFavorites((prev) => !prev)}
+            />
+            <span>お気に入り献立を多めにする（★）</span>
+          </label>
         </div>
 
         <button
@@ -341,11 +394,24 @@ export default function Home() {
                 {selectedMenus.map((item) => (
                   <div
                     key={item.day}
-                    className="flex items-center justify-between border rounded p-3"
+                    className={`flex items-center justify-between rounded-lg border p-3 ${lockedDays.includes(item.day) ? "border-blue-400 bg-blue-50" : ""
+                      }`}
                   >
                     <div>
                       <p className="font-semibold">{item.day}</p>
-                      <p>{item.menu}</p>
+
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold">{item.menu}</p>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleFavoriteMenu(item.menu)}
+                          className="text-xl"
+                        >
+                          {favoriteMenus.includes(item.menu) ? "★" : "☆"}
+                        </button>
+                      </div>
+
                       <p className="text-sm text-gray-600">
                         副菜：{item.sideDishes.map((sideDish) => sideDish.name).join("、")}
                       </p>

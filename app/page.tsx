@@ -29,6 +29,8 @@ export default function Home() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [pendingRemoveFavorites, setPendingRemoveFavorites] = useState<string[]>([]);
 
+  const [includeSideDishes, setIncludeSideDishes] = useState(true);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -176,7 +178,9 @@ export default function Home() {
         day,
         menu: selectedMenu.name,
         ingredients: selectedMenu.ingredients,
-        sideDishes: pickSideDishes(selectedMenu.sideDishNeeds),
+        sideDishes: includeSideDishes
+          ? pickSideDishes(selectedMenu.sideDishNeeds)
+          : [],
       };
     });
 
@@ -207,7 +211,9 @@ export default function Home() {
         day: item.day,
         menu: selectedMenu.name,
         ingredients: selectedMenu.ingredients,
-        sideDishes: pickSideDishes(selectedMenu.sideDishNeeds),
+        sideDishes: includeSideDishes
+          ? pickSideDishes(selectedMenu.sideDishNeeds)
+          : [],
       };
     });
 
@@ -396,6 +402,38 @@ export default function Home() {
           <label className="mt-4 flex items-center gap-2">
             <input
               type="checkbox"
+              checked={includeSideDishes}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIncludeSideDishes(checked);
+
+                setGeneratedMenus((prev) =>
+                  prev.map((item) => {
+                    if (checked) {
+                      const menu = menuPool.find((menu) => menu.name === item.menu);
+
+                      return {
+                        ...item,
+                        sideDishes: menu ? pickSideDishes(menu.sideDishNeeds) : [],
+                      };
+                    }
+
+                    return {
+                      ...item,
+                      sideDishes: [],
+                    };
+                  })
+                );
+
+                setCheckedIngredients([]);
+              }}
+            />
+            副菜を提案する
+          </label>
+
+          <label className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
               checked={preferFavorites}
               onChange={() => setPreferFavorites((prev) => !prev)}
             />
@@ -509,9 +547,14 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <p className="text-sm text-gray-600">
-                        副菜：{item.sideDishes.map((sideDish) => sideDish.name).join("、")}
-                      </p>
+                      <div className="text-sm text-gray-600">
+                        {item.sideDishes.length > 0 && (
+                          <p>
+                            副菜：
+                            {item.sideDishes.map((dish) => dish.name).join("、")}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">

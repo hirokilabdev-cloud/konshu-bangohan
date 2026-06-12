@@ -26,6 +26,9 @@ export default function Home() {
   const [favoriteMenus, setFavoriteMenus] = useState<string[]>([]);
   const [preferFavorites, setPreferFavorites] = useState(false);
 
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [pendingRemoveFavorites, setPendingRemoveFavorites] = useState<string[]>([]);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -288,6 +291,30 @@ export default function Home() {
     window.open(url, "_blank");
   };
 
+  const togglePendingFavorite = (menuName: string) => {
+    setPendingRemoveFavorites((prev) =>
+      prev.includes(menuName)
+        ? prev.filter((item) => item !== menuName)
+        : [...prev, menuName]
+    );
+  };
+
+  const saveFavoriteChanges = () => {
+    const updatedFavorites = favoriteMenus.filter(
+      (menuName) =>
+        !pendingRemoveFavorites.includes(menuName)
+    );
+
+    setFavoriteMenus(updatedFavorites);
+
+    localStorage.setItem(
+      "favoriteMenus",
+      JSON.stringify(updatedFavorites)
+    );
+
+    setPendingRemoveFavorites([]);
+  };
+
   return (
     <main className="min-h-screen bg-gray-100 p-6 text-gray-900">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
@@ -375,6 +402,76 @@ export default function Home() {
             <span>お気に入り献立を多めにする（★）</span>
           </label>
         </div>
+
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setShowFavorites((prev) => !prev)}
+            className="rounded bg-yellow-100 px-3 py-2 font-semibold"
+          >
+            ★ お気に入り献立 {favoriteMenus.length}件
+            {showFavorites ? "（閉じる）" : "（表示）"}
+          </button>
+        </div>
+        {showFavorites && (
+          <div className="mt-3 rounded border p-3">
+            <h3 className="mb-1 font-bold">お気に入り献立</h3>
+            <p className="mb-2 text-sm text-gray-500">
+              お気に入りにした献立は、優先抽選で出やすくなります。
+            </p>
+
+            {favoriteMenus.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                お気に入りはまだありません
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {favoriteMenus.map((menuName) => (
+                  <div
+                    key={menuName}
+                    className={`flex items-center justify-between rounded p-2 ${pendingRemoveFavorites.includes(menuName)
+                      ? "bg-gray-100 text-gray-400 line-through"
+                      : ""
+                      }`}
+                  >
+                    <span>{menuName}</span>
+
+                    <button
+                      type="button"
+                      onClick={() => togglePendingFavorite(menuName)}
+                      className="text-2xl"
+                    >
+                      {pendingRemoveFavorites.includes(menuName)
+                        ? "☆"
+                        : "★"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={saveFavoriteChanges}
+                disabled={pendingRemoveFavorites.length === 0}
+                className={`rounded px-3 py-2 text-white ${pendingRemoveFavorites.length === 0
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-red-500 hover:bg-red-600"
+                  }`}
+              >
+                変更を保存
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPendingRemoveFavorites([])}
+                className="rounded bg-gray-300 px-3 py-2"
+              >
+                元に戻す
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={generateMenus}

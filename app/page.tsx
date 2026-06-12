@@ -31,6 +31,8 @@ export default function Home() {
 
   const [includeSideDishes, setIncludeSideDishes] = useState(true);
 
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -49,6 +51,54 @@ export default function Home() {
       setFavoriteMenus(JSON.parse(savedFavorites));
     }
   }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("konshu-settings");
+
+    if (saved) {
+      const settings = JSON.parse(saved);
+
+      setAdultCount(settings.adultCount ?? 2);
+      setChildCount(settings.childCount ?? 2);
+
+      setSelectedDays(settings.selectedDays ?? days);
+      setSelectedTags(settings.selectedTags ?? []);
+
+      setIncludeSideDishes(
+        settings.includeSideDishes ?? true
+      );
+
+      setPreferFavorites(
+        settings.preferFavorites ?? false
+      );
+    }
+
+    setSettingsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded) return;
+
+    localStorage.setItem(
+      "konshu-settings",
+      JSON.stringify({
+        adultCount,
+        childCount,
+        selectedDays,
+        selectedTags,
+        includeSideDishes,
+        preferFavorites,
+      })
+    );
+  }, [
+    settingsLoaded,
+    adultCount,
+    childCount,
+    selectedDays,
+    selectedTags,
+    includeSideDishes,
+    preferFavorites,
+  ]);
 
   /**
    * お気に入り切替関数

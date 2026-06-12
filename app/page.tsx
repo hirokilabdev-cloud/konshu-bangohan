@@ -33,6 +33,9 @@ export default function Home() {
 
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
+  const [avoidLastMenus, setAvoidLastMenus] = useState(true);
+  const [lastGeneratedMenus, setLastGeneratedMenus] = useState<string[]>([]);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -52,8 +55,21 @@ export default function Home() {
     }
   }, []);
 
+  /**
+   * 初回読み込み時にローカルストレージから設定を復元
+   */
   useEffect(() => {
     const saved = localStorage.getItem("konshu-settings");
+    const savedAvoidLastMenus = localStorage.getItem("avoidLastMenus");
+    const savedLastGeneratedMenus = localStorage.getItem("lastGeneratedMenus");
+
+    if (savedAvoidLastMenus !== null) {
+      setAvoidLastMenus(JSON.parse(savedAvoidLastMenus));
+    }
+
+    if (savedLastGeneratedMenus) {
+      setLastGeneratedMenus(JSON.parse(savedLastGeneratedMenus));
+    }
 
     if (saved) {
       const settings = JSON.parse(saved);
@@ -76,7 +92,12 @@ export default function Home() {
     setSettingsLoaded(true);
   }, []);
 
+  /**
+   * 設定変更をローカルストレージに保存
+   */
   useEffect(() => {
+
+
     if (!settingsLoaded) return;
 
     localStorage.setItem(
@@ -90,6 +111,10 @@ export default function Home() {
         preferFavorites,
       })
     );
+    localStorage.setItem(
+      "avoidLastMenus",
+      JSON.stringify(avoidLastMenus)
+    );
   }, [
     settingsLoaded,
     adultCount,
@@ -98,6 +123,7 @@ export default function Home() {
     selectedTags,
     includeSideDishes,
     preferFavorites,
+    avoidLastMenus,
   ]);
 
   /**
@@ -190,13 +216,28 @@ export default function Home() {
     // タグ一致メニューがあればそれをベースにする。なければ全メニュー
     const baseCandidates = matchedMenus.length > 0 ? matchedMenus : menuPool;
 
-    // まだ今週使っていない通常候補
+    // 前回献立をなるべく避ける
+    const avoidMenus = avoidLastMenus ? lastGeneratedMenus : [];
+
+    // 通常候補：今週すでに使った献立 + 前回献立を除外
     const normalCandidates = baseCandidates.filter(
+      (menu) =>
+        !excludeMenuNames.includes(menu.name) &&
+        !avoidMenus.includes(menu.name)
+    );
+
+    // 前回献立を除外しすぎて候補がなくなった場合の保険
+    const fallbackNormalCandidates = baseCandidates.filter(
       (menu) => !excludeMenuNames.includes(menu.name)
     );
 
-    // まだ今週使っていないお気に入り候補
-    const favoriteCandidates = normalCandidates.filter((menu) =>
+    const usableNormalCandidates =
+      normalCandidates.length > 0
+        ? normalCandidates
+        : fallbackNormalCandidates;
+
+    // お気に入り候補
+    const favoriteCandidates = usableNormalCandidates.filter((menu) =>
       favoriteMenus.includes(menu.name)
     );
 
@@ -204,16 +245,11 @@ export default function Home() {
     const shouldUseFavorite =
       preferFavorites && favoriteCandidates.length > 0 && Math.random() < 0.7;
 
-    // 70%判定に当たったらお気に入り候補、外れたら通常候補
-    const candidates = shouldUseFavorite ? favoriteCandidates : normalCandidates;
+    const candidates = shouldUseFavorite
+      ? favoriteCandidates
+      : usableNormalCandidates;
 
-    // 候補が空の場合は、タグ一致候補に戻す
-    const fallbackCandidates =
-      candidates.length > 0 ? candidates : baseCandidates;
-
-    return fallbackCandidates[
-      Math.floor(Math.random() * fallbackCandidates.length)
-    ];
+    return candidates[Math.floor(Math.random() * candidates.length)];
   };
 
   const generateMenus = () => {
@@ -233,6 +269,15 @@ export default function Home() {
           : [],
       };
     });
+
+    const generatedMenuNames = menus.map((item) => item.menu);
+
+    setLastGeneratedMenus(generatedMenuNames);
+
+    localStorage.setItem(
+      "lastGeneratedMenus",
+      JSON.stringify(generatedMenuNames)
+    );
 
     setGeneratedMenus(menus);
     setIncludedDays(targetDays);
@@ -479,6 +524,15 @@ export default function Home() {
               }}
             />
             副菜を提案する
+          </label>
+
+          <label className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={avoidLastMenus}
+              onChange={(e) => setAvoidLastMenus(e.target.checked)}
+            />
+            前回の献立をなるべく避ける
           </label>
 
           <label className="mt-4 flex items-center gap-2">

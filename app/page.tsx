@@ -21,6 +21,8 @@ export default function Home() {
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
+  const [lockedDays, setLockedDays] = useState<string[]>([]);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -70,6 +72,14 @@ export default function Home() {
     );
   };
 
+  const toggleLockedDay = (day: string) => {
+    setLockedDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((item) => item !== day)
+        : [...prev, day]
+    );
+  };
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag)
@@ -89,21 +99,31 @@ export default function Home() {
     return [...candidates].sort(() => Math.random() - 0.5).slice(0, 2);
   };
 
-  const generateMenus = () => {
-    const targetDays = days.filter((day) => selectedDays.includes(day));
-
+  const pickRandomMenu = (excludeMenuNames: string[] = []) => {
     const matchedMenus = menuPool.filter((menu) =>
       selectedTags.every((tag) => menu.tags.includes(tag))
     );
 
-    const candidateMenus = matchedMenus.length >= targetDays.length
-      ? matchedMenus
-      : menuPool;
+    const candidateMenus =
+      matchedMenus.length > 0 ? matchedMenus : menuPool;
 
-    const shuffledMenus = [...candidateMenus].sort(() => Math.random() - 0.5);
+    const filteredMenus = candidateMenus.filter(
+      (menu) => !excludeMenuNames.includes(menu.name)
+    );
 
-    const menus = targetDays.map((day, index) => {
-      const selectedMenu = shuffledMenus[index % shuffledMenus.length];
+    const finalCandidates =
+      filteredMenus.length > 0 ? filteredMenus : candidateMenus;
+
+    return finalCandidates[Math.floor(Math.random() * finalCandidates.length)];
+  };
+
+  const generateMenus = () => {
+    const targetDays = days.filter((day) => selectedDays.includes(day));
+    const usedMenuNames: string[] = [];
+
+    const menus = targetDays.map((day) => {
+      const selectedMenu = pickRandomMenu(usedMenuNames);
+      usedMenuNames.push(selectedMenu.name);
 
       return {
         day,
@@ -116,7 +136,36 @@ export default function Home() {
     setGeneratedMenus(menus);
     setIncludedDays(targetDays);
     setCheckedIngredients([]);
+    setLockedDays([]);
     setShowResult(true);
+  };
+
+  /**
+   * 未確定だけ再抽選関数
+   */
+  const regenerateUnlockedMenus = () => {
+    const usedMenuNames = generatedMenus
+      .filter((item) => lockedDays.includes(item.day))
+      .map((item) => item.menu);
+
+    const menus = generatedMenus.map((item) => {
+      if (lockedDays.includes(item.day)) {
+        return item;
+      }
+
+      const selectedMenu = pickRandomMenu(usedMenuNames);
+      usedMenuNames.push(selectedMenu.name);
+
+      return {
+        day: item.day,
+        menu: selectedMenu.name,
+        ingredients: selectedMenu.ingredients,
+        sideDishes: pickSideDishes(selectedMenu.sideDishNeeds),
+      };
+    });
+
+    setGeneratedMenus(menus);
+    setCheckedIngredients([]);
   };
 
   const selectedMenus = generatedMenus;
@@ -302,18 +351,41 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={includedDays.includes(item.day)}
-                        onChange={() => toggleIncludedDay(item.day)}
-                      />
-                      <span>買い物リストに含める</span>
-                    </label>
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleLockedDay(item.day)}
+                        className={`rounded px-3 py-1 text-sm font-bold ${lockedDays.includes(item.day)
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-700"
+                          }`}
+                      >
+                        {lockedDays.includes(item.day) ? "キープ中" : "キープする"}
+                      </button>
+
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={includedDays.includes(item.day)}
+                          onChange={() => toggleIncludedDay(item.day)}
+                        />
+                        <span>買い物リストに含める</span>
+                      </label>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={regenerateUnlockedMenus}
+                className="w-full rounded bg-blue-500 p-3 font-bold text-white hover:bg-blue-600"
+              >
+                キープ中以外の曜日だけ再抽選する
+              </button>
+            </div>
 
             <h2 className="text-2xl font-bold mb-4">買い物リスト</h2>
 

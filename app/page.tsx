@@ -45,6 +45,15 @@ export default function Home() {
     }[]
   >([]);
 
+  const [menuHistory, setMenuHistory] = useState<
+    {
+      createdAt: string;
+      menus: string[];
+    }[]
+  >([]);
+
+  const [showHistory, setShowHistory] = useState(false);
+
   const servingCount = adultCount + childCount * 0.5;
 
   useEffect(() => {
@@ -62,6 +71,13 @@ export default function Home() {
     const saved = localStorage.getItem("konshu-settings");
     const savedAvoidLastMenus = localStorage.getItem("avoidLastMenus");
     const savedLastGeneratedMenus = localStorage.getItem("lastGeneratedMenus");
+
+    const savedHistory =
+      localStorage.getItem("menuHistory");
+
+    if (savedHistory) {
+      setMenuHistory(JSON.parse(savedHistory));
+    }
 
     if (savedAvoidLastMenus !== null) {
       setAvoidLastMenus(JSON.parse(savedAvoidLastMenus));
@@ -272,18 +288,48 @@ export default function Home() {
 
     const generatedMenuNames = menus.map((item) => item.menu);
 
-    setLastGeneratedMenus(generatedMenuNames);
-
-    localStorage.setItem(
-      "lastGeneratedMenus",
-      JSON.stringify(generatedMenuNames)
-    );
-
+    // 献立履歴に追加
     setGeneratedMenus(menus);
     setIncludedDays(targetDays);
     setCheckedIngredients([]);
     setLockedDays([]);
     setShowResult(true);
+  };
+
+  /**
+   * 現在の献立を履歴に保存する 
+   * @returns 
+   */
+  const saveCurrentMenusToHistory = () => {
+    const menuNames = generatedMenus.map((item) => item.menu);
+
+    if (menuNames.length === 0) {
+      return;
+    }
+
+    const newHistory = [
+      {
+        createdAt: new Date().toISOString(),
+        menus: menuNames,
+      },
+      ...menuHistory,
+    ].slice(0, 10);
+
+    setMenuHistory(newHistory);
+
+    localStorage.setItem(
+      "menuHistory",
+      JSON.stringify(newHistory)
+    );
+
+    setLastGeneratedMenus(menuNames);
+
+    localStorage.setItem(
+      "lastGeneratedMenus",
+      JSON.stringify(menuNames)
+    );
+
+    alert("今週の献立として保存しました！");
   };
 
   /**
@@ -414,6 +460,21 @@ export default function Home() {
     );
 
     setPendingRemoveFavorites([]);
+  };
+
+  const deleteHistory = (index: number) => {
+    const ok = confirm("この献立履歴を削除しますか？");
+
+    if (!ok) return;
+
+    const updatedHistory = menuHistory.filter((_, historyIndex) => historyIndex !== index);
+
+    setMenuHistory(updatedHistory);
+
+    localStorage.setItem(
+      "menuHistory",
+      JSON.stringify(updatedHistory)
+    );
   };
 
   return (
@@ -616,6 +677,50 @@ export default function Home() {
         )}
 
         <button
+          type="button"
+          onClick={() =>
+            setShowHistory((prev) => !prev)
+          }
+          className="rounded bg-green-100 px-3 py-2 font-semibold"
+        >
+          📚 献立履歴 {menuHistory.length}件
+          {showHistory ? "（閉じる）" : "（表示）"}
+        </button>
+
+        {showHistory && (
+          <div className="mt-3 rounded border p-3">
+            <h3 className="mb-2 font-bold">
+              献立履歴
+            </h3>
+
+            {menuHistory.map((history, index) => (
+              <div
+                key={index}
+                className="mb-4 border-b pb-2"
+              >
+                <p className="font-semibold">
+                  {new Date(
+                    history.createdAt
+                  ).toLocaleDateString("ja-JP")}
+                </p>
+
+                {history.menus.map((menu) => (
+                  <p key={menu}>・{menu}</p>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => deleteHistory(index)}
+                  className="mt-2 rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
+                >
+                  この履歴を削除
+                </button>
+              </div>
+
+            ))}
+          </div>
+        )}
+
+        <button
           onClick={generateMenus}
           className="w-full bg-orange-500 text-white p-3 rounded font-bold hover:bg-orange-600"
         >
@@ -639,17 +744,16 @@ export default function Home() {
                     <div>
                       <p className="font-semibold">{item.day}</p>
 
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold">{item.menu}</p>
-
-                        <button
-                          type="button"
-                          onClick={() => toggleFavoriteMenu(item.menu)}
-                          className="text-xl"
-                        >
+                      <button
+                        type="button"
+                        onClick={() => toggleFavoriteMenu(item.menu)}
+                        className="flex items-center gap-2 text-left"
+                      >
+                        <span className="font-bold">{item.menu}</span>
+                        <span className="text-xl">
                           {favoriteMenus.includes(item.menu) ? "★" : "☆"}
-                        </button>
-                      </div>
+                        </span>
+                      </button>
 
                       <div className="text-sm text-gray-600">
                         {item.sideDishes.length > 0 && (
@@ -694,6 +798,13 @@ export default function Home() {
                 className="w-full rounded bg-blue-500 p-3 font-bold text-white hover:bg-blue-600"
               >
                 キープ中以外の曜日だけ再抽選する
+              </button>
+              <button
+                type="button"
+                onClick={saveCurrentMenusToHistory}
+                className="mt-3 w-full rounded bg-green-600 p-3 font-bold text-white hover:bg-green-700"
+              >
+                今週の献立として保存する
               </button>
             </div>
 

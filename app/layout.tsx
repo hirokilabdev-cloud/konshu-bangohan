@@ -15,8 +15,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "今週の晩ご飯どうする？",
-  description:
-    "共働き子育て家庭向けの週間献立と買い物リスト作成ツールです。",
+  description: "共働き家庭向け献立提案ツール",
+
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

@@ -8,6 +8,49 @@ const days = ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "
 
 const categoryOrder = ["肉・魚", "野菜", "卵・豆腐・乳製品", "調味料", "その他"];
 
+const ingredientAliases: Record<string, string> = {
+  たまご: "卵",
+  タマゴ: "卵",
+  玉子: "卵",
+
+  たまねぎ: "玉ねぎ",
+  玉葱: "玉ねぎ",
+
+  ねぎ: "長ねぎ",
+  ネギ: "長ねぎ",
+  長ネギ: "長ねぎ",
+
+  じゃが芋: "じゃがいも",
+  ジャガイモ: "じゃがいも",
+
+  人参: "にんじん",
+  ニンジン: "にんじん",
+
+  キャベツ: "キャベツ",
+  きゃべつ: "キャベツ",
+
+  豚: "豚肉",
+  豚こま: "豚肉",
+  豚バラ: "豚肉",
+  ぶたにく: "豚肉",
+  ぶた: "豚肉",
+
+  鶏肉: "鶏もも肉",
+  とりにく: "鶏もも肉",
+  とり: "鶏もも肉",
+  とり肉: "鶏もも肉",
+  鳥肉: "鶏もも肉",
+
+  豆腐: "豆腐",
+  とうふ: "豆腐",
+};
+
+const normalizeIngredientName = (name: string) => {
+  const trimmedName = name.trim();
+
+  return ingredientAliases[trimmedName] ?? trimmedName;
+};
+
 export default function Home() {
   const [showResult, setShowResult] = useState(false);
 
@@ -54,6 +97,9 @@ export default function Home() {
 
   const [showHistory, setShowHistory] = useState(false);
 
+  const [stockInput, setStockInput] = useState("");
+  const [stockIngredients, setStockIngredients] = useState<string[]>([]);
+
   const servingCount = adultCount + childCount * 0.5;
 
   useEffect(() => {
@@ -74,6 +120,12 @@ export default function Home() {
 
     const savedHistory =
       localStorage.getItem("menuHistory");
+
+    const savedStockIngredients = localStorage.getItem("stockIngredients");
+
+    if (savedStockIngredients) {
+      setStockIngredients(JSON.parse(savedStockIngredients));
+    }
 
     if (savedHistory) {
       setMenuHistory(JSON.parse(savedHistory));
@@ -477,6 +529,51 @@ export default function Home() {
     );
   };
 
+  /**
+   * 在庫材料を追加する 
+   * @returns 
+   */
+  const addStockIngredients = () => {
+    const ingredients = stockInput
+      .split(/[\s,、]+/)
+      .map((item) => normalizeIngredientName(item))
+      .filter((item) => item.length > 0);
+
+    if (ingredients.length === 0) {
+      return;
+    }
+
+    const updatedStocks = Array.from(
+      new Set([...stockIngredients, ...ingredients])
+    );
+
+    setStockIngredients(updatedStocks);
+
+    localStorage.setItem(
+      "stockIngredients",
+      JSON.stringify(updatedStocks)
+    );
+
+    setStockInput("");
+  };
+
+  /**
+   * 在庫材料を削除する
+   * @param ingredientName 
+   */
+  const removeStockIngredient = (ingredientName: string) => {
+    const updatedStocks = stockIngredients.filter(
+      (item) => item !== ingredientName
+    );
+
+    setStockIngredients(updatedStocks);
+
+    localStorage.setItem(
+      "stockIngredients",
+      JSON.stringify(updatedStocks)
+    );
+  };
+
   return (
     <main className="min-h-screen bg-gray-100 p-6 text-gray-900">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
@@ -720,6 +817,52 @@ export default function Home() {
           </div>
         )}
 
+        <div className="mt-6 rounded border p-3">
+          <h3 className="mb-2 font-bold">冷蔵庫にある食材</h3>
+
+          <p className="mb-2 text-sm text-gray-500">
+            半角/全角スペース、カンマ区切りでまとめて追加できます。
+          </p>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={stockInput}
+              onChange={(e) => setStockInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addStockIngredients();
+                }
+              }}
+              placeholder="例：卵 玉ねぎ 豆腐"
+              className="flex-1 rounded border p-2"
+            />
+
+            <button
+              type="button"
+              onClick={addStockIngredients}
+              className="rounded bg-gray-800 px-4 py-2 font-bold text-white hover:bg-gray-900"
+            >
+              追加
+            </button>
+          </div>
+
+          {stockIngredients.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {stockIngredients.map((ingredient) => (
+                <button
+                  key={ingredient}
+                  type="button"
+                  onClick={() => removeStockIngredient(ingredient)}
+                  className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-800 hover:bg-green-200"
+                >
+                  {ingredient} ×
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={generateMenus}
           className="w-full bg-orange-500 text-white p-3 rounded font-bold hover:bg-orange-600"
@@ -837,9 +980,11 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
-                            const isChecked = checkedIngredients.includes(
-                              ingredient.name
-                            );
+                            const isInStock = stockIngredients
+                              .map((item) => normalizeIngredientName(item))
+                              .includes(normalizeIngredientName(ingredient.name));
+                            const isChecked =
+                              checkedIngredients.includes(ingredient.name) || isInStock;
 
                             return (
                               <li
@@ -860,7 +1005,14 @@ export default function Home() {
                                         toggleIngredient(ingredient.name)
                                       }
                                     />
-                                    <span>{ingredient.name}</span>
+                                    <span>
+                                      {ingredient.name}
+                                      {isInStock && (
+                                        <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                                          冷蔵庫にあり
+                                        </span>
+                                      )}
+                                    </span>
                                   </div>
 
                                   <span className="font-semibold">

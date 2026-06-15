@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { menuPool, type Ingredient } from "../data/menus";
 import { sideDishPool, type SideDish } from "../data/sideDishes";
 
+const YOSHIKEI_URL = "https://px.a8.net/svt/ejp?a8mat=4B5WGB+EJXKZE+1QM6+HZAGY";
+
 const days = ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"];
 
 const categoryOrder = ["肉・魚", "野菜", "卵・豆腐・乳製品", "調味料", "その他"];
@@ -1133,6 +1135,33 @@ export default function Home() {
             )}
           </div>
         )}
+      </div>
+      <div className="mx-auto mt-2 w-full max-w-2xl">
+        <div className="relative mt-2 rounded-xl border border-orange-200 bg-orange-50 p-4">
+          <span className="absolute right-3 top-3 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600">
+            PR
+          </span>
+          <h3 className="mb-2 text-lg font-bold text-orange-800">
+            忙しい週はミールキットという選択肢も
+          </h3>
+
+          <p className="mb-3 text-sm text-gray-700">
+            今週は忙しくて料理を考える余裕がない...<br /><br />
+            ヨシケイなら、<br />
+            5日間お試しセットを50％OFFで利用できます。
+          </p>
+          <a
+            href={YOSHIKEI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              console.log("ヨシケイクリック");
+            }}
+            className="inline-block rounded-lg bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-600"
+          >
+            50％OFFお試しセットを見る
+          </a>
+        </div>
       </div>
     </main>
   );

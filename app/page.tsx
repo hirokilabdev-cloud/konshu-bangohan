@@ -67,7 +67,9 @@ export default function Home() {
   const [lockedDays, setLockedDays] = useState<string[]>([]);
 
   const [favoriteMenus, setFavoriteMenus] = useState<string[]>([]);
-  const [preferFavorites, setPreferFavorites] = useState(false);
+  const [favoriteMode, setFavoriteMode] = useState<
+    "normal" | "prefer" | "only"
+  >("normal");
 
   const [showFavorites, setShowFavorites] = useState(false);
   const [pendingRemoveFavorites, setPendingRemoveFavorites] = useState<string[]>([]);
@@ -152,9 +154,7 @@ export default function Home() {
         settings.includeSideDishes ?? true
       );
 
-      setPreferFavorites(
-        settings.preferFavorites ?? false
-      );
+      setFavoriteMode(settings.favoriteMode ?? "normal");
     }
 
     setSettingsLoaded(true);
@@ -176,7 +176,7 @@ export default function Home() {
         selectedDays,
         selectedTags,
         includeSideDishes,
-        preferFavorites,
+        favoriteMode,
       })
     );
     localStorage.setItem(
@@ -190,7 +190,7 @@ export default function Home() {
     selectedDays,
     selectedTags,
     includeSideDishes,
-    preferFavorites,
+    favoriteMode,
     avoidLastMenus,
   ]);
 
@@ -276,48 +276,50 @@ export default function Home() {
   };
 
   const pickRandomMenu = (excludeMenuNames: string[] = []) => {
-    // 重視項目タグに一致するメニューを抽出
     const matchedMenus = menuPool.filter((menu) =>
       selectedTags.every((tag) => menu.tags.includes(tag))
     );
 
-    // タグ一致メニューがあればそれをベースにする。なければ全メニュー
     const baseCandidates = matchedMenus.length > 0 ? matchedMenus : menuPool;
 
-    // 前回献立をなるべく避ける
     const avoidMenus = avoidLastMenus ? lastGeneratedMenus : [];
 
-    // 通常候補：今週すでに使った献立 + 前回献立を除外
     const normalCandidates = baseCandidates.filter(
       (menu) =>
         !excludeMenuNames.includes(menu.name) &&
         !avoidMenus.includes(menu.name)
     );
 
-    // 前回献立を除外しすぎて候補がなくなった場合の保険
     const fallbackNormalCandidates = baseCandidates.filter(
       (menu) => !excludeMenuNames.includes(menu.name)
     );
 
     const usableNormalCandidates =
-      normalCandidates.length > 0
-        ? normalCandidates
-        : fallbackNormalCandidates;
+      normalCandidates.length > 0 ? normalCandidates : fallbackNormalCandidates;
 
-    // お気に入り候補
     const favoriteCandidates = usableNormalCandidates.filter((menu) =>
       favoriteMenus.includes(menu.name)
     );
 
-    // お気に入り優先ONなら70%でお気に入りを使う
-    const shouldUseFavorite =
-      preferFavorites && favoriteCandidates.length > 0 && Math.random() < 0.7;
+    if (favoriteMode === "only" && favoriteCandidates.length > 0) {
+      return favoriteCandidates[
+        Math.floor(Math.random() * favoriteCandidates.length)
+      ];
+    }
 
-    const candidates = shouldUseFavorite
-      ? favoriteCandidates
-      : usableNormalCandidates;
+    if (
+      favoriteMode === "prefer" &&
+      favoriteCandidates.length > 0 &&
+      Math.random() < 0.7
+    ) {
+      return favoriteCandidates[
+        Math.floor(Math.random() * favoriteCandidates.length)
+      ];
+    }
 
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    return usableNormalCandidates[
+      Math.floor(Math.random() * usableNormalCandidates.length)
+    ];
   };
 
   const generateMenus = () => {
@@ -694,12 +696,45 @@ export default function Home() {
           </label>
 
           <label className="mt-4 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={preferFavorites}
-              onChange={() => setPreferFavorites((prev) => !prev)}
-            />
-            <span>お気に入り献立を多めにする（★）</span>
+            <div className="mt-4">
+              <p className="mb-2 font-semibold">お気に入りの使い方</p>
+
+              <div className="flex flex-wrap gap-3 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="favoriteMode"
+                    checked={favoriteMode === "normal"}
+                    onChange={() => setFavoriteMode("normal")}
+                  />
+                  通常
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="favoriteMode"
+                    checked={favoriteMode === "prefer"}
+                    onChange={() => setFavoriteMode("prefer")}
+                  />
+                  お気に入り多め
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="favoriteMode"
+                    checked={favoriteMode === "only"}
+                    onChange={() => setFavoriteMode("only")}
+                  />
+                  お気に入りだけ
+                </label>
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                「お気に入りだけ」は、足りない場合のみ通常メニューで補完します。
+              </p>
+            </div>
           </label>
         </div>
 

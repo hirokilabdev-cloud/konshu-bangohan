@@ -859,7 +859,7 @@ export default function Home() {
             半角/全角スペース、カンマ区切りでまとめて追加できます。
           </p>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={stockInput}
@@ -870,13 +870,13 @@ export default function Home() {
                 }
               }}
               placeholder="例：卵 玉ねぎ 豆腐"
-              className="flex-1 rounded border p-2"
+              className="w-full rounded border p-2 sm:flex-1"
             />
 
             <button
               type="button"
               onClick={addStockIngredients}
-              className="rounded bg-gray-800 px-4 py-2 font-bold text-white hover:bg-gray-900"
+              className="w-full rounded bg-gray-800 px-4 py-2 font-bold text-white hover:bg-gray-900 sm:w-auto"
             >
               追加
             </button>

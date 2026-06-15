@@ -81,6 +81,8 @@ export default function Home() {
   const [avoidLastMenus, setAvoidLastMenus] = useState(true);
   const [lastGeneratedMenus, setLastGeneratedMenus] = useState<string[]>([]);
 
+  const [preferStockMenus, setPreferStockMenus] = useState(true);
+
   const [generatedMenus, setGeneratedMenus] = useState<
     {
       day: string;
@@ -125,6 +127,8 @@ export default function Home() {
 
     const savedStockIngredients = localStorage.getItem("stockIngredients");
 
+
+
     if (savedStockIngredients) {
       setStockIngredients(JSON.parse(savedStockIngredients));
     }
@@ -155,6 +159,7 @@ export default function Home() {
       );
 
       setFavoriteMode(settings.favoriteMode ?? "normal");
+      setPreferStockMenus(settings.preferStockMenus ?? true);
     }
 
     setSettingsLoaded(true);
@@ -177,6 +182,7 @@ export default function Home() {
         selectedTags,
         includeSideDishes,
         favoriteMode,
+        preferStockMenus,
       })
     );
     localStorage.setItem(
@@ -192,6 +198,7 @@ export default function Home() {
     includeSideDishes,
     favoriteMode,
     avoidLastMenus,
+    preferStockMenus,
   ]);
 
   /**
@@ -275,6 +282,14 @@ export default function Home() {
     return [...candidates].sort(() => Math.random() - 0.5).slice(0, 2);
   };
 
+  const getStockMatchScore = (menu: (typeof menuPool)[number]) => {
+    return menu.ingredients.filter((ingredient) =>
+      stockIngredients
+        .map((stock) => normalizeIngredientName(stock))
+        .includes(normalizeIngredientName(ingredient.name))
+    ).length;
+  };
+
   const pickRandomMenu = (excludeMenuNames: string[] = []) => {
     const matchedMenus = menuPool.filter((menu) =>
       selectedTags.every((tag) => menu.tags.includes(tag))
@@ -317,8 +332,33 @@ export default function Home() {
       ];
     }
 
-    return usableNormalCandidates[
-      Math.floor(Math.random() * usableNormalCandidates.length)
+    const candidates =
+      favoriteMode === "only" && favoriteCandidates.length > 0
+        ? favoriteCandidates
+        : favoriteMode === "prefer" &&
+          favoriteCandidates.length > 0 &&
+          Math.random() < 0.7
+          ? favoriteCandidates
+          : usableNormalCandidates;
+
+    const finalCandidates =
+      candidates.length > 0 ? candidates : usableNormalCandidates;
+
+    const stockMatchedCandidates = finalCandidates.filter(
+      (menu) => getStockMatchScore(menu) > 0
+    );
+
+    const shouldUseStockMatched =
+      preferStockMenus &&
+      stockMatchedCandidates.length > 0 &&
+      Math.random() < 0.7;
+
+    const pickedCandidates = shouldUseStockMatched
+      ? stockMatchedCandidates
+      : finalCandidates;
+
+    return pickedCandidates[
+      Math.floor(Math.random() * pickedCandidates.length)
     ];
   };
 
@@ -853,6 +893,14 @@ export default function Home() {
         )}
 
         <div className="mt-6 rounded border p-3">
+          <label className="mt-3 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={preferStockMenus}
+              onChange={(e) => setPreferStockMenus(e.target.checked)}
+            />
+            冷蔵庫にある食材を使う献立を優先する
+          </label>
           <h3 className="mb-2 font-bold">冷蔵庫にある食材</h3>
 
           <p className="mb-2 text-sm text-gray-500">

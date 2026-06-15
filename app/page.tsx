@@ -1137,13 +1137,16 @@ export default function Home() {
         )}
       </div>
       <div className="mx-auto mt-2 w-full max-w-2xl">
-        <div className="relative mt-2 rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <span className="absolute right-3 top-3 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600">
-            PR
-          </span>
-          <h3 className="mb-2 text-lg font-bold text-orange-800">
-            忙しい週はミールキットという選択肢も
-          </h3>
+        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <h3 className="text-base font-bold text-orange-800 sm:text-lg">
+              忙しい週はミールキットという選択肢も
+            </h3>
+
+            <span className="shrink-0 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600">
+              PR
+            </span>
+          </div>
 
           <p className="mb-3 text-sm text-gray-700">
             今週は忙しくて料理を考える余裕がない...<br /><br />

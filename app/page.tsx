@@ -5,6 +5,7 @@ import { menuPool, type Ingredient } from "../data/menus";
 import { sideDishPool, type SideDish } from "../data/sideDishes";
 
 const YOSHIKEI_URL = "https://px.a8.net/svt/ejp?a8mat=4B5WGB+EJXKZE+1QM6+HZAGY";
+const WATAMI_URL = "https://px.a8.net/svt/ejp?a8mat=4B5WGC+169WL6+3YYE+15RK35";
 
 const days = ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"];
 
@@ -1140,7 +1141,7 @@ export default function Home() {
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
           <div className="mb-2 flex items-start justify-between gap-3">
             <h3 className="text-base font-bold text-orange-800 sm:text-lg">
-              忙しい週はミールキットという選択肢も
+              忙しい週は時短サービスという選択肢も
             </h3>
 
             <span className="shrink-0 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600">
@@ -1148,22 +1149,71 @@ export default function Home() {
             </span>
           </div>
 
-          <p className="mb-3 text-sm text-gray-700">
-            今週は忙しくて料理を考える余裕がない...<br /><br />
-            ヨシケイなら、<br />
-            5日間お試しセットを50％OFFで利用できます。
+          <p className="mb-4 text-sm text-gray-700">
+            今週は忙しくて献立を考える余裕がない...
+            <br />
+            そんなときは宅配サービスを活用する方法もあります。
           </p>
-          <a
-            href={YOSHIKEI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              console.log("ヨシケイクリック");
-            }}
-            className="inline-block rounded-lg bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-600"
-          >
-            50％OFFお試しセットを見る
-          </a>
+
+          <div className="grid gap-4 md:grid-cols-2">
+
+            {/* ヨシケイ */}
+            <div className="rounded-lg border border-orange-200 bg-white p-4">
+              <h4 className="mb-2 font-bold text-orange-700">
+                🥕 ヨシケイ
+              </h4>
+
+              <ul className="mb-4 text-sm text-gray-700">
+                <li>✓ 買い物不要</li>
+                <li>✓ 約20分で調理</li>
+                <li>✓ 家族向けミールキット</li>
+              </ul>
+
+              <a
+                href={YOSHIKEI_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.gtag?.("event", "affiliate_click", {
+                      affiliate_name: "yoshikei",
+                    });
+                  }
+                }}
+                className="inline-block rounded-lg bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-600"
+              >
+                お試しセットを見る
+              </a>
+            </div>
+
+            {/* ワタミ */}
+            <div className="rounded-lg border border-green-200 bg-white p-4">
+              <h4 className="mb-2 font-bold text-green-700">
+                🍱 ワタミの宅食ダイレクト
+              </h4>
+
+              <ul className="mb-4 text-sm text-gray-700">
+                <li>✓ レンジで温めるだけ</li>
+                <li>✓ 調理不要</li>
+                <li>✓ 忙しい平日に便利</li>
+              </ul>
+
+              <a
+                href={WATAMI_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  window.gtag?.("event", "affiliate_click", {
+                    affiliate_name: "watami",
+                  });
+                }}
+                className="inline-block rounded-lg bg-green-600 px-4 py-2 font-bold text-white hover:bg-green-700"
+              >
+                初回割引を見る
+              </a>
+            </div>
+
+          </div>
         </div>
       </div>
     </main>

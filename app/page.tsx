@@ -1100,7 +1100,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-orange-700">
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1 text-sm font-semibold text-orange-700">
                   {adoptedMenus.length}/{mealCount}食
                 </span>
               </div>
@@ -1114,47 +1114,51 @@ export default function Home() {
                   {adoptedMenus.map((menu, index) => (
                     <div
                       key={menu.name}
-                      className="flex items-center justify-between gap-3 rounded-lg bg-white p-3"
+                      className="rounded-lg bg-white p-3"
                     >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
                           {index + 1}
                         </span>
 
-                        <button
-                          type="button"
-                          onClick={() => toggleFavoriteMenu(menu.name)}
-                          className="flex min-w-0 items-start gap-2 text-left"
-                          aria-label={`${menu.name}をお気に入りに設定`}
-                        >
-                          <div className="min-w-0">
-                            <span className="block truncate font-medium">
-                              {menu.name}
-                            </span>
-
-                            {menu.sideDishes.length > 0 && (
-                              <p className="mt-1 text-sm font-normal text-gray-500">
-                                副菜：
-                                {menu.sideDishes
-                                  .map((sideDish) => sideDish.name)
-                                  .join("・")}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="break-words font-medium">
+                                {menu.name}
                               </p>
-                            )}
+
+                              {menu.sideDishes.length > 0 && (
+                                <p className="mt-1 break-words text-sm text-gray-500">
+                                  副菜：
+                                  {menu.sideDishes
+                                    .map((sideDish) => sideDish.name)
+                                    .join("・")}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => toggleFavoriteMenu(menu.name)}
+                              className="shrink-0 text-2xl text-yellow-500"
+                              aria-label={`${menu.name}をお気に入りに設定`}
+                            >
+                              {favoriteMenus.includes(menu.name) ? "★" : "☆"}
+                            </button>
                           </div>
 
-                          <span className="shrink-0 text-xl text-yellow-500">
-                            {favoriteMenus.includes(menu.name) ? "★" : "☆"}
-                          </span>
-                        </button>
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => cancelAdoption(menu)}
+                              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                            >
+                              取り下げ
+                            </button>
+                          </div>
+                        </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => cancelAdoption(menu)}
-                        className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
-                      >
-                        取り下げ
-                      </button>
                     </div>
                   ))}
                 </div>

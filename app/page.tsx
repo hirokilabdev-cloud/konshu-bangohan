@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { menuPool, type Ingredient } from "../data/menus";
+import { Menu, menuPool, type Ingredient } from "../data/menus";
 import { sideDishPool, type SideDish } from "../data/sideDishes";
+
+type AdoptedMenu = Menu & {
+  sideDishes: SideDish[];
+};
 
 const YOSHIKEI_URL = "https://px.a8.net/svt/ejp?a8mat=4B5WGB+EJXKZE+1QM6+HZAGY";
 const WATAMI_URL = "https://px.a8.net/svt/ejp?a8mat=4B5WGC+169WL6+3YYE+15RK35";
@@ -109,6 +113,16 @@ export default function Home() {
 
   const servingCount = adultCount + childCount * 0.5;
 
+  const [mealCount, setMealCount] = useState(4);
+  const [candidateCount, setCandidateCount] = useState(7);
+
+  const [candidateMenus, setCandidateMenus] = useState<Menu[]>([]);
+  const [adoptedMenus, setAdoptedMenus] =
+    useState<AdoptedMenu[]>([]);
+
+  const [hasGeneratedCandidates, setHasGeneratedCandidates] =
+    useState(false);
+
   useEffect(() => {
     const savedFavorites = localStorage.getItem("favoriteMenus");
 
@@ -163,6 +177,9 @@ export default function Home() {
 
       setFavoriteMode(settings.favoriteMode ?? "normal");
       setPreferStockMenus(settings.preferStockMenus ?? true);
+
+      setMealCount(settings.mealCount ?? 4);
+      setCandidateCount(settings.candidateCount ?? 7);
     }
 
     setSettingsLoaded(true);
@@ -186,6 +203,8 @@ export default function Home() {
         includeSideDishes,
         favoriteMode,
         preferStockMenus,
+        mealCount,
+        candidateCount,
       })
     );
     localStorage.setItem(
@@ -202,8 +221,81 @@ export default function Home() {
     favoriteMode,
     avoidLastMenus,
     preferStockMenus,
+    mealCount,
+    candidateCount,
   ]);
 
+  /**
+   * 候補メニューを生成する
+   */
+  const generateCandidateMenus = () => {
+    // 採用済みメニューは抽選対象から除外
+    const adoptedMenuNames = new Set(
+      adoptedMenus.map((menu) => menu.name)
+    );
+
+    const availableMenus = menuPool.filter(
+      (menu) => !adoptedMenuNames.has(menu.name)
+    );
+
+    // 配列をシャッフル
+    const shuffledMenus = [...availableMenus].sort(
+      () => Math.random() - 0.5
+    );
+
+    // 指定された候補数だけ取得
+    const newCandidates = shuffledMenus.slice(0, candidateCount);
+
+    setCandidateMenus(newCandidates);
+    setHasGeneratedCandidates(true);
+  };
+
+  /**
+   * メニューを採用する
+   * @param menu 
+   */
+  const adoptMenu = (menu: Menu) => {
+    if (adoptedMenus.length >= mealCount) {
+      return;
+    }
+
+    if (
+      adoptedMenus.some(
+        (adoptedMenu) => adoptedMenu.name === menu.name
+      )
+    ) {
+      return;
+    }
+
+    const newAdoptedMenu: AdoptedMenu = {
+      ...menu,
+      sideDishes: includeSideDishes
+        ? pickSideDishes(menu.sideDishNeeds)
+        : [],
+    };
+
+    setAdoptedMenus((prev) => [
+      ...prev,
+      newAdoptedMenu,
+    ]);
+
+    setCandidateMenus((prev) =>
+      prev.filter(
+        (candidateMenu) => candidateMenu.name !== menu.name
+      )
+    );
+  };
+  /**
+   * メニューの採用をキャンセルする
+   * @param menu 
+   */
+  const cancelAdoption = (menu: Menu) => {
+    setAdoptedMenus((prev) =>
+      prev.filter(
+        (adoptedMenu) => adoptedMenu.name !== menu.name
+      )
+    );
+  };
   /**
    * お気に入り切替関数
    * @param menuName 
@@ -398,7 +490,10 @@ export default function Home() {
    * @returns 
    */
   const saveCurrentMenusToHistory = () => {
-    const menuNames = generatedMenus.map((item) => item.menu);
+    const menuNames =
+      adoptedMenus.length > 0
+        ? adoptedMenus.map((menu) => menu.name)
+        : generatedMenus.map((item) => item.menu);
 
     if (menuNames.length === 0) {
       return;
@@ -461,13 +556,29 @@ export default function Home() {
 
   const selectedMenus = generatedMenus;
 
-  const shoppingList = selectedMenus
-    .filter((item) => includedDays.includes(item.day))
-    .flatMap((item) => [
-      ...item.ingredients,
-      ...item.sideDishes.flatMap((sideDish) => sideDish.ingredients ?? []),
-    ])
-    .reduce<Ingredient[]>((list, ingredient) => {
+  /**   * 買い物リストの材料をまとめる
+     */
+  const shoppingListIngredients: Ingredient[] =
+    adoptedMenus.length > 0
+      ? adoptedMenus.flatMap((menu) => [
+        ...menu.ingredients,
+        ...menu.sideDishes.flatMap(
+          (sideDish) => sideDish.ingredients ?? []
+        ),
+      ])
+      : selectedMenus
+        .filter((item) => includedDays.includes(item.day))
+        .flatMap((item) => [
+          ...item.ingredients,
+          ...item.sideDishes.flatMap(
+            (sideDish) => sideDish.ingredients ?? []
+          ),
+        ]);
+  /**
+   * 買い物リストを作成する 
+   */
+  const shoppingList = shoppingListIngredients.reduce<Ingredient[]>(
+    (list, ingredient) => {
       const calculatedAmount = ingredient.amount * servingCount;
 
       const existingIngredient = list.find(
@@ -486,6 +597,8 @@ export default function Home() {
       return list;
     }, []);
 
+  /**   * 買い物リストをカテゴリごとにまとめる
+   */
   const groupedShoppingList = categoryOrder
     .map((category) => ({
       category,
@@ -505,6 +618,8 @@ export default function Home() {
     return `${roundedAmount}${unit}`;
   };
 
+  /**   * 買い物リストをテキスト化する
+   */
   const makeShoppingListText = () => {
     return groupedShoppingList
       .map((group) => {
@@ -663,20 +778,37 @@ export default function Home() {
         </div>
 
         <div className="mb-6">
-          <h2 className="font-semibold mb-2">作る曜日</h2>
+          <h2 className="font-semibold mb-2">献立数</h2>
 
-          <div className="grid grid-cols-2 gap-2">
-            {days.map((day) => (
-              <label key={day} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedDays.includes(day)}
-                  onChange={() => toggleDay(day)}
-                />
-                <span>{day}</span>
-              </label>
-            ))}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="flex items-center justify-between gap-3">
+              <span>作りたい食数</span>
+              <input
+                type="number"
+                min={1}
+                max={14}
+                value={mealCount}
+                onChange={(e) => setMealCount(Number(e.target.value))}
+                className="w-24 rounded border p-2"
+              />
+            </label>
+
+            <label className="flex items-center justify-between gap-3">
+              <span>候補表示数</span>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={candidateCount}
+                onChange={(e) => setCandidateCount(Number(e.target.value))}
+                className="w-24 rounded border p-2"
+              />
+            </label>
           </div>
+
+          <p className="mt-2 text-sm text-gray-500">
+            候補を多めに出して、気に入った献立だけ採用できます。
+          </p>
         </div>
 
         <div className="mb-6">
@@ -950,15 +1082,266 @@ export default function Home() {
         </div>
 
         <button
-          onClick={generateMenus}
-          className="w-full bg-orange-500 text-white p-3 rounded font-bold hover:bg-orange-600"
+          type="button"
+          onClick={generateCandidateMenus}
+          className="mt-4 mb-2 w-full rounded-lg bg-orange-500 px-4 py-4 font-bold text-white hover:bg-orange-600"
         >
-          今週の献立を作る
+          献立候補を出す
         </button>
+        {hasGeneratedCandidates && (
+          <div className="mt-1 space-y-6">
+            {/* 採用済みメニュー */}
+            <section className="rounded-xl border bg-orange-50 p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">採用済みメニュー</h2>
+                  <p className="text-sm text-gray-600">
+                    今週作る献立をここに追加します
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-orange-700">
+                  {adoptedMenus.length}/{mealCount}食
+                </span>
+              </div>
+
+              {adoptedMenus.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-orange-200 bg-white p-6 text-center text-sm text-gray-500">
+                  おすすめ候補から気に入った献立を採用してください
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {adoptedMenus.map((menu, index) => (
+                    <div
+                      key={menu.name}
+                      className="flex items-center justify-between gap-3 rounded-lg bg-white p-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+                          {index + 1}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleFavoriteMenu(menu.name)}
+                          className="flex min-w-0 items-start gap-2 text-left"
+                          aria-label={`${menu.name}をお気に入りに設定`}
+                        >
+                          <div className="min-w-0">
+                            <span className="block truncate font-medium">
+                              {menu.name}
+                            </span>
+
+                            {menu.sideDishes.length > 0 && (
+                              <p className="mt-1 text-sm font-normal text-gray-500">
+                                副菜：
+                                {menu.sideDishes
+                                  .map((sideDish) => sideDish.name)
+                                  .join("・")}
+                              </p>
+                            )}
+                          </div>
+
+                          <span className="shrink-0 text-xl text-yellow-500">
+                            {favoriteMenus.includes(menu.name) ? "★" : "☆"}
+                          </span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => cancelAdoption(menu)}
+                        className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                      >
+                        取り下げ
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {(adoptedMenus.length > 0 || generatedMenus.length > 0) && (
+              <button
+                type="button"
+                onClick={saveCurrentMenusToHistory}
+                className="mt-1 w-full rounded bg-green-600 p-3 font-bold text-white hover:bg-green-700"
+              >
+                今週の献立として保存する
+              </button>
+            )}
+
+            {/* 候補メニュー */}
+            <section className="rounded-xl border bg-white p-4 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">おすすめ候補</h2>
+                  <p className="text-sm text-gray-500">
+                    毎回 {candidateCount} 件の候補を表示します
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
+                  {candidateMenus.length}/{candidateCount}件
+                </span>
+              </div>
+
+              {candidateMenus.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
+                  ここに抽選した献立候補が表示されます
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {candidateMenus.map((menu) => (
+                    <div
+                      key={menu.name}
+                      className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                    >
+                      <span className="font-medium">{menu.name}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => adoptMenu(menu)}
+                        disabled={adoptedMenus.length >= mealCount}
+                        className="shrink-0 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        採用
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={generateCandidateMenus}
+                    disabled={adoptedMenus.length >= mealCount}
+                    className="w-full rounded-lg border border-orange-500 px-4 py-3 font-semibold text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400"
+                  >
+                    {adoptedMenus.length >= mealCount
+                      ? "予定していた献立が決まりました"
+                      : `候補を${candidateCount}件再抽選`}
+                  </button>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+
+        {adoptedMenus.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mt-6 w-full text-2xl font-bold mb-4"
+            >買い物リスト</h2>
+
+            {groupedShoppingList.length === 0 ? (
+              <p className="text-gray-600">
+                買い物リストに含める献立がありません。
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {groupedShoppingList.map((group) => {
+                  const isOpen = openCategories.includes(group.category);
+
+                  return (
+                    <div key={group.category}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(group.category)}
+                        className="flex w-full items-center justify-between border-b pb-1 mb-2 font-bold"
+                      >
+                        <span>
+                          {isOpen ? "▼" : "▶"} {group.category}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {group.ingredients.length}件
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <ul className="space-y-2">
+                          {group.ingredients.map((ingredient) => {
+                            const isInStock = stockIngredients
+                              .map((item) => normalizeIngredientName(item))
+                              .includes(normalizeIngredientName(ingredient.name));
+                            const isChecked =
+                              checkedIngredients.includes(ingredient.name) || isInStock;
+
+                            return (
+                              <li
+                                key={`${ingredient.name}-${ingredient.unit}`}
+                                className="list-none"
+                              >
+                                <label
+                                  className={`flex items-center justify-between gap-4 rounded p-2 cursor-pointer ${isChecked
+                                    ? "bg-gray-200 text-gray-500 line-through"
+                                    : ""
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() =>
+                                        toggleIngredient(ingredient.name)
+                                      }
+                                    />
+                                    <span>
+                                      {ingredient.name}
+                                      {isInStock && (
+                                        <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                                          冷蔵庫にあり
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+
+                                  <span className="font-semibold">
+                                    {formatAmount(
+                                      ingredient.amount,
+                                      ingredient.unit
+                                    )}
+                                  </span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    onClick={copyShoppingList}
+                    className="rounded bg-gray-800 p-3 font-bold text-white hover:bg-gray-900"
+                  >
+                    買い物リストをコピー
+                  </button>
+
+                  <button
+                    onClick={shareToLine}
+                    className="rounded bg-green-500 p-3 font-bold text-white hover:bg-green-600"
+                  >
+                    LINEで共有
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {showResult && (
           <div className="mt-8 border-t pt-6">
-            <h2 className="text-2xl font-bold mb-4">今週の献立</h2>
+
+
+
+            <div className="mt-8 space-y-6">
+              <h2 className="text-2xl font-bold mb-4">今週の献立</h2>
+
+
+
+
+            </div>
 
             {selectedMenus.length === 0 ? (
               <p className="text-gray-600">作る曜日が選択されていません。</p>

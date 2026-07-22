@@ -752,25 +752,27 @@ export default function Home() {
 
             <div className="flex gap-4">
               <div>
-                <label>大人</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={adultCount}
-                  onChange={(event) => setAdultCount(Number(event.target.value))}
-                  className="border rounded p-2 ml-2 w-20"
-                />
+                <label><span>大人</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={adultCount}
+                    onChange={(event) => setAdultCount(Number(event.target.value))}
+                    className="w-24 rounded-lg border bg-white p-2"
+                  />
+                </label>
               </div>
 
               <div>
-                <label>子ども</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={childCount}
-                  onChange={(event) => setChildCount(Number(event.target.value))}
-                  className="border rounded p-2 ml-2 w-20"
-                />
+                <label><span>子ども</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={childCount}
+                    onChange={(event) => setChildCount(Number(event.target.value))}
+                    className="w-24 rounded-lg border bg-white p-2"
+                  />
+                </label>
               </div>
             </div>
 
@@ -793,7 +795,7 @@ export default function Home() {
                   max={14}
                   value={mealCount}
                   onChange={(e) => setMealCount(Number(e.target.value))}
-                  className="w-24 rounded border p-2"
+                  className="w-24 rounded-lg border bg-white p-2"
                 />
               </label>
 

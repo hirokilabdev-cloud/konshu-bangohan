@@ -944,16 +944,25 @@ export default function Home() {
                       : ""
                       }`}
                   >
-                    <span>{menuName}</span>
-
                     <button
                       type="button"
                       onClick={() => togglePendingFavorite(menuName)}
-                      className="text-2xl"
+                      className="flex w-full items-center justify-between gap-3 rounded p-2 text-left hover:bg-yellow-50 active:bg-yellow-100"
+                      aria-label={
+                        pendingRemoveFavorites.includes(menuName)
+                          ? `${menuName}をお気に入りに戻す`
+                          : `${menuName}をお気に入りから削除する`
+                      }
                     >
-                      {pendingRemoveFavorites.includes(menuName)
-                        ? "☆"
-                        : "★"}
+                      <span className="min-w-0 break-words">
+                        {menuName}
+                      </span>
+
+                      <span className="shrink-0 text-2xl text-yellow-500">
+                        {pendingRemoveFavorites.includes(menuName)
+                          ? "☆"
+                          : "★"}
+                      </span>
                     </button>
                   </div>
                 ))}
@@ -1123,28 +1132,30 @@ export default function Home() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="break-words font-medium">
-                                {menu.name}
-                              </p>
-
-                              {menu.sideDishes.length > 0 && (
-                                <p className="mt-1 break-words text-sm text-gray-500">
-                                  副菜：
-                                  {menu.sideDishes
-                                    .map((sideDish) => sideDish.name)
-                                    .join("・")}
-                                </p>
-                              )}
-                            </div>
-
                             <button
                               type="button"
                               onClick={() => toggleFavoriteMenu(menu.name)}
-                              className="shrink-0 text-2xl text-yellow-500"
-                              aria-label={`${menu.name}をお気に入りに設定`}
+                              className="flex min-w-0 flex-1 items-start justify-between gap-2 text-left"
+                              aria-label={`${menu.name}のお気に入りを切り替える`}
                             >
-                              {favoriteMenus.includes(menu.name) ? "★" : "☆"}
+                              <div className="min-w-0">
+                                <p className="break-words font-medium">
+                                  {menu.name}
+                                </p>
+
+                                {menu.sideDishes.length > 0 && (
+                                  <p className="mt-1 break-words text-sm text-gray-500">
+                                    副菜：
+                                    {menu.sideDishes
+                                      .map((sideDish) => sideDish.name)
+                                      .join("・")}
+                                  </p>
+                                )}
+                              </div>
+
+                              <span className="shrink-0 text-2xl text-yellow-500">
+                                {favoriteMenus.includes(menu.name) ? "★" : "☆"}
+                              </span>
                             </button>
                           </div>
 
@@ -1201,7 +1212,16 @@ export default function Home() {
                       key={menu.name}
                       className="flex items-center justify-between gap-3 rounded-lg border p-3"
                     >
-                      <span className="font-medium">{menu.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => adoptMenu(menu)}
+                        disabled={adoptedMenus.length >= mealCount}
+                        className="min-w-0 flex-1 text-left disabled:cursor-not-allowed"
+                      >
+                        <span className="break-words font-medium">
+                          {menu.name}
+                        </span>
+                      </button>
 
                       <button
                         type="button"

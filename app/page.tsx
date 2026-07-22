@@ -744,297 +744,328 @@ export default function Home() {
         <p className="text-gray-600 mb-6">
           共働き子育て家庭の「月曜日から何作ろう…」を5分で終わらせる
         </p>
+        <div className="space-y-5">
+          <section className="rounded-xl border border-orange-200 bg-orange-50/60 p-4">
+            <h2 className="mb-4 text-lg font-bold text-orange-800">
+              👨‍👩‍👧 人数
+            </h2>
 
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">人数</h2>
+            <div className="flex gap-4">
+              <div>
+                <label>大人</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={adultCount}
+                  onChange={(event) => setAdultCount(Number(event.target.value))}
+                  className="border rounded p-2 ml-2 w-20"
+                />
+              </div>
 
-          <div className="flex gap-4">
-            <div>
-              <label>大人</label>
-              <input
-                type="number"
-                min={0}
-                value={adultCount}
-                onChange={(event) => setAdultCount(Number(event.target.value))}
-                className="border rounded p-2 ml-2 w-20"
-              />
+              <div>
+                <label>子ども</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={childCount}
+                  onChange={(event) => setChildCount(Number(event.target.value))}
+                  className="border rounded p-2 ml-2 w-20"
+                />
+              </div>
             </div>
 
-            <div>
-              <label>子ども</label>
-              <input
-                type="number"
-                min={0}
-                value={childCount}
-                onChange={(event) => setChildCount(Number(event.target.value))}
-                className="border rounded p-2 ml-2 w-20"
-              />
+            <p className="text-sm text-gray-600 mt-2">
+              子どもは0.5人前として計算します。現在：{servingCount}人前
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-orange-200 bg-orange-50/60 p-4">
+            <h2 className="mb-4 text-lg font-bold text-orange-800">
+              🍳 献立数
+            </h2>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex items-center justify-between gap-3">
+                <span>作りたい食数</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={14}
+                  value={mealCount}
+                  onChange={(e) => setMealCount(Number(e.target.value))}
+                  className="w-24 rounded border p-2"
+                />
+              </label>
+
+              <label className="flex items-center justify-between gap-4">
+                <div>
+                  <span className="block">
+                    候補表示数
+                  </span>
+
+                  <span className="mt-1 block text-xs text-gray-500">
+                    食数より3〜7件多めがおすすめ
+                  </span>
+                </div>
+
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={candidateCount}
+                  onChange={(e) => setCandidateCount(Number(e.target.value))}
+                  className="w-24 rounded-lg border bg-white p-2"
+                />
+              </label>
             </div>
-          </div>
 
-          <p className="text-sm text-gray-600 mt-2">
-            子どもは0.5人前として計算します。現在：{servingCount}人前
-          </p>
-        </div>
+            <p className="mt-2 text-sm text-gray-500">
+              候補を多めに出して、気に入った献立だけ採用できます。
+            </p>
+          </section>
 
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">献立数</h2>
+          <section className="rounded-xl border border-orange-200 bg-orange-50/60 p-4">
+            <h2 className="mb-4 text-lg font-bold text-orange-800">
+              ⭐ 献立の好み
+            </h2>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex items-center justify-between gap-3">
-              <span>作りたい食数</span>
+            <h3 className="mb-3 font-semibold">
+              重視項目
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              {["節約", "時短", "がっつり", "ダイエット", "子ども向け"].map(
+                (item) => (
+                  <label key={item} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedTags.includes(item)}
+                      onChange={() => toggleTag(item)}
+                    />
+                    <span>{item}</span>
+                  </label>
+                )
+              )}
+            </div>
+
+            <label className="mt-4 flex items-center gap-2">
               <input
-                type="number"
-                min={1}
-                max={14}
-                value={mealCount}
-                onChange={(e) => setMealCount(Number(e.target.value))}
-                className="w-24 rounded border p-2"
-              />
-            </label>
+                type="checkbox"
+                checked={includeSideDishes}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIncludeSideDishes(checked);
 
-            <label className="flex items-center justify-between gap-3">
-              <span>候補表示数</span>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={candidateCount}
-                onChange={(e) => setCandidateCount(Number(e.target.value))}
-                className="w-24 rounded border p-2"
-              />
-            </label>
-          </div>
+                  setGeneratedMenus((prev) =>
+                    prev.map((item) => {
+                      if (checked) {
+                        const menu = menuPool.find((menu) => menu.name === item.menu);
 
-          <p className="mt-2 text-sm text-gray-500">
-            候補を多めに出して、気に入った献立だけ採用できます。
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">重視項目</h2>
-
-          <div className="grid grid-cols-2 gap-2">
-            {["節約", "時短", "がっつり", "ダイエット", "子ども向け"].map(
-              (item) => (
-                <label key={item} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedTags.includes(item)}
-                    onChange={() => toggleTag(item)}
-                  />
-                  <span>{item}</span>
-                </label>
-              )
-            )}
-          </div>
-
-          <label className="mt-4 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includeSideDishes}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setIncludeSideDishes(checked);
-
-                setGeneratedMenus((prev) =>
-                  prev.map((item) => {
-                    if (checked) {
-                      const menu = menuPool.find((menu) => menu.name === item.menu);
+                        return {
+                          ...item,
+                          sideDishes: menu ? pickSideDishes(menu.sideDishNeeds) : [],
+                        };
+                      }
 
                       return {
                         ...item,
-                        sideDishes: menu ? pickSideDishes(menu.sideDishNeeds) : [],
+                        sideDishes: [],
                       };
-                    }
+                    })
+                  );
 
-                    return {
-                      ...item,
-                      sideDishes: [],
-                    };
-                  })
-                );
+                  setCheckedIngredients([]);
+                }}
+              />
+              副菜を提案する
+            </label>
 
-                setCheckedIngredients([]);
-              }}
-            />
-            副菜を提案する
-          </label>
 
-          <label className="mt-4 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={avoidLastMenus}
-              onChange={(e) => setAvoidLastMenus(e.target.checked)}
-            />
-            前回の献立をなるべく避ける
-          </label>
+            <label className="mt-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={avoidLastMenus}
+                onChange={(e) => setAvoidLastMenus(e.target.checked)}
+              />
+              前回の献立をなるべく避ける
+            </label>
 
-          <label className="mt-4 flex items-center gap-2">
-            <div className="mt-4">
-              <p className="mb-2 font-semibold">お気に入りの使い方</p>
+            <label className="mt-4 flex items-center gap-2">
+              <div className="mt-4">
+                <p className="mb-2 font-semibold">お気に入り献立の優先度</p>
 
-              <div className="flex flex-wrap gap-3 text-sm">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="favoriteMode"
-                    checked={favoriteMode === "normal"}
-                    onChange={() => setFavoriteMode("normal")}
-                  />
-                  通常
-                </label>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="favoriteMode"
+                      checked={favoriteMode === "normal"}
+                      onChange={() => setFavoriteMode("normal")}
+                    />
+                    通常
+                  </label>
 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="favoriteMode"
-                    checked={favoriteMode === "prefer"}
-                    onChange={() => setFavoriteMode("prefer")}
-                  />
-                  お気に入り多め
-                </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="favoriteMode"
+                      checked={favoriteMode === "prefer"}
+                      onChange={() => setFavoriteMode("prefer")}
+                    />
+                    お気に入り多め
+                  </label>
 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="favoriteMode"
-                    checked={favoriteMode === "only"}
-                    onChange={() => setFavoriteMode("only")}
-                  />
-                  お気に入りだけ
-                </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="favoriteMode"
+                      checked={favoriteMode === "only"}
+                      onChange={() => setFavoriteMode("only")}
+                    />
+                    お気に入りだけ
+                  </label>
+                </div>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  「お気に入りだけ」は、足りない場合のみ通常メニューで補完します。
+                </p>
               </div>
+            </label>
+          </section>
 
-              <p className="mt-1 text-xs text-gray-500">
-                「お気に入りだけ」は、足りない場合のみ通常メニューで補完します。
-              </p>
-            </div>
-          </label>
-        </div>
 
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setShowFavorites((prev) => !prev)}
-            className="rounded bg-yellow-100 px-3 py-2 font-semibold"
-          >
-            ★ お気に入り献立 {favoriteMenus.length}件
-            {showFavorites ? "（閉じる）" : "（表示）"}
-          </button>
-        </div>
-        {showFavorites && (
-          <div className="mt-3 rounded border p-3">
-            <h3 className="mb-1 font-bold">お気に入り献立</h3>
-            <p className="mb-2 text-sm text-gray-500">
-              お気に入りにした献立は、優先抽選で出やすくなります。
+          <section className="rounded-xl border border-orange-200 bg-orange-50/60 p-4">
+            <h2 className="mb-4 text-lg font-bold text-orange-800">
+              📚 これまでの献立
+            </h2>
+
+            <p className="mb-4 text-sm text-gray-600">
+              お気に入りや、以前保存した献立を確認できます。
             </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setShowFavorites((prev) => !prev)}
+                className="rounded bg-yellow-100 px-3 py-2 font-semibold"
+              >
+                ★ お気に入り献立 {favoriteMenus.length}件
+                {showFavorites ? "（閉じる）" : "（表示）"}
+              </button>
+            </div>
+            {showFavorites && (
+              <div className="mt-3 rounded border p-3">
+                <h3 className="mb-1 font-bold">お気に入り献立</h3>
+                <p className="mb-2 text-sm text-gray-500">
+                  お気に入りにした献立は、優先抽選で出やすくなります。
+                </p>
 
-            {favoriteMenus.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                お気に入りはまだありません
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {favoriteMenus.map((menuName) => (
-                  <div
-                    key={menuName}
-                    className={`flex items-center justify-between rounded p-2 ${pendingRemoveFavorites.includes(menuName)
-                      ? "bg-gray-100 text-gray-400 line-through"
-                      : ""
+                {favoriteMenus.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    お気に入りはまだありません
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {favoriteMenus.map((menuName) => (
+                      <div
+                        key={menuName}
+                        className={`flex items-center justify-between rounded p-2 ${pendingRemoveFavorites.includes(menuName)
+                          ? "bg-gray-100 text-gray-400 line-through"
+                          : ""
+                          }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => togglePendingFavorite(menuName)}
+                          className="flex w-full items-center justify-between gap-3 rounded p-2 text-left hover:bg-yellow-50 active:bg-yellow-100"
+                          aria-label={
+                            pendingRemoveFavorites.includes(menuName)
+                              ? `${menuName}をお気に入りに戻す`
+                              : `${menuName}をお気に入りから削除する`
+                          }
+                        >
+                          <span className="min-w-0 break-words">
+                            {menuName}
+                          </span>
+
+                          <span className="shrink-0 text-2xl text-yellow-500">
+                            {pendingRemoveFavorites.includes(menuName)
+                              ? "☆"
+                              : "★"}
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveFavoriteChanges}
+                    disabled={pendingRemoveFavorites.length === 0}
+                    className={`rounded px-3 py-2 text-white ${pendingRemoveFavorites.length === 0
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600"
                       }`}
                   >
+                    変更を保存
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPendingRemoveFavorites([])}
+                    className="rounded bg-gray-300 px-3 py-2"
+                  >
+                    元に戻す
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowHistory((prev) => !prev)
+              }
+              className="rounded bg-green-100 px-3 py-2 font-semibold"
+            >
+              📚 献立履歴 {menuHistory.length}件
+              {showHistory ? "（閉じる）" : "（表示）"}
+            </button>
+
+            {showHistory && (
+              <div className="mt-3 rounded border p-3">
+                <h3 className="mb-2 font-bold">
+                  献立履歴
+                </h3>
+
+                {menuHistory.map((history, index) => (
+                  <div
+                    key={index}
+                    className="mb-4 border-b pb-2"
+                  >
+                    <p className="font-semibold">
+                      {new Date(
+                        history.createdAt
+                      ).toLocaleDateString("ja-JP")}
+                    </p>
+
+                    {history.menus.map((menu) => (
+                      <p key={menu}>・{menu}</p>
+                    ))}
                     <button
                       type="button"
-                      onClick={() => togglePendingFavorite(menuName)}
-                      className="flex w-full items-center justify-between gap-3 rounded p-2 text-left hover:bg-yellow-50 active:bg-yellow-100"
-                      aria-label={
-                        pendingRemoveFavorites.includes(menuName)
-                          ? `${menuName}をお気に入りに戻す`
-                          : `${menuName}をお気に入りから削除する`
-                      }
+                      onClick={() => deleteHistory(index)}
+                      className="mt-2 rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
                     >
-                      <span className="min-w-0 break-words">
-                        {menuName}
-                      </span>
-
-                      <span className="shrink-0 text-2xl text-yellow-500">
-                        {pendingRemoveFavorites.includes(menuName)
-                          ? "☆"
-                          : "★"}
-                      </span>
+                      この履歴を削除
                     </button>
                   </div>
+
                 ))}
               </div>
             )}
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={saveFavoriteChanges}
-                disabled={pendingRemoveFavorites.length === 0}
-                className={`rounded px-3 py-2 text-white ${pendingRemoveFavorites.length === 0
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-600"
-                  }`}
-              >
-                変更を保存
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPendingRemoveFavorites([])}
-                className="rounded bg-gray-300 px-3 py-2"
-              >
-                元に戻す
-              </button>
-            </div>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() =>
-            setShowHistory((prev) => !prev)
-          }
-          className="rounded bg-green-100 px-3 py-2 font-semibold"
-        >
-          📚 献立履歴 {menuHistory.length}件
-          {showHistory ? "（閉じる）" : "（表示）"}
-        </button>
-
-        {showHistory && (
-          <div className="mt-3 rounded border p-3">
-            <h3 className="mb-2 font-bold">
-              献立履歴
-            </h3>
-
-            {menuHistory.map((history, index) => (
-              <div
-                key={index}
-                className="mb-4 border-b pb-2"
-              >
-                <p className="font-semibold">
-                  {new Date(
-                    history.createdAt
-                  ).toLocaleDateString("ja-JP")}
-                </p>
-
-                {history.menus.map((menu) => (
-                  <p key={menu}>・{menu}</p>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => deleteHistory(index)}
-                  className="mt-2 rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-                >
-                  この履歴を削除
-                </button>
-              </div>
-
-            ))}
-          </div>
-        )}
+          </section>
+        </div>
 
         <div className="mt-6 rounded border p-3">
           <label className="mt-3 flex items-center gap-2">

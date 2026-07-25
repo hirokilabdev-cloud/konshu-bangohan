@@ -62,7 +62,7 @@ export default function Home() {
   const [showResult, setShowResult] = useState(false);
 
   const [adultCount, setAdultCount] = useState(2);
-  const [childCount, setChildCount] = useState(2);
+  const [childCount, setChildCount] = useState(0);
 
   const [selectedDays, setSelectedDays] = useState<string[]>(days);
   const [includedDays, setIncludedDays] = useState<string[]>(days);
@@ -166,7 +166,7 @@ export default function Home() {
       const settings = JSON.parse(saved);
 
       setAdultCount(settings.adultCount ?? 2);
-      setChildCount(settings.childCount ?? 2);
+      setChildCount(settings.childCount ?? 0);
 
       setSelectedDays(settings.selectedDays ?? days);
       setSelectedTags(settings.selectedTags ?? []);
@@ -750,29 +750,75 @@ export default function Home() {
               👨‍👩‍👧 人数
             </h2>
 
-            <div className="flex gap-4">
-              <div>
-                <label><span>大人</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={adultCount}
-                    onChange={(event) => setAdultCount(Number(event.target.value))}
-                    className="w-24 rounded-lg border bg-white p-2"
-                  />
-                </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* 大人 */}
+              <div className="rounded-lg border border-orange-100 p-3">
+                <p className="mb-2 font-medium">大人</p>
+
+                <div className="flex items-center justify-between overflow-hidden rounded-lg border bg-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAdultCount((prev) => Math.max(0, prev - 1))
+                    }
+                    disabled={adultCount <= 0}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="大人の人数を1人減らす"
+                  >
+                    −
+                  </button>
+
+                  <span className="min-w-14 border-x px-4 text-center text-lg font-semibold">
+                    {adultCount}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAdultCount((prev) => Math.min(10, prev + 1))
+                    }
+                    disabled={adultCount >= 10}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="大人の人数を1人増やす"
+                  >
+                    ＋
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label><span>子ども</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={childCount}
-                    onChange={(event) => setChildCount(Number(event.target.value))}
-                    className="w-24 rounded-lg border bg-white p-2"
-                  />
-                </label>
+              {/* 子ども */}
+              <div className="rounded-lg border border-orange-100 p-3">
+                <p className="mb-2 font-medium">子ども</p>
+
+                <div className="flex items-center justify-between overflow-hidden rounded-lg border bg-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChildCount((prev) => Math.max(0, prev - 1))
+                    }
+                    disabled={childCount <= 0}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="子どもの人数を1人減らす"
+                  >
+                    −
+                  </button>
+
+                  <span className="min-w-14 border-x px-4 text-center text-lg font-semibold">
+                    {childCount}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChildCount((prev) => Math.min(10, prev + 1))
+                    }
+                    disabled={childCount >= 10}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="子どもの人数を1人増やす"
+                  >
+                    ＋
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -786,43 +832,88 @@ export default function Home() {
               🍳 献立数
             </h2>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex items-center justify-between gap-3">
-                <span>作りたい食数</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={14}
-                  value={mealCount}
-                  onChange={(e) => setMealCount(Number(e.target.value))}
-                  className="w-24 rounded-lg border bg-white p-2"
-                />
-              </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* 作りたい食数 */}
+              <div className="rounded-lg border border-orange-100 bg-orange-50/40 p-3">
+                <p className="mb-2 font-medium">作りたい食数</p>
 
-              <label className="flex items-center justify-between gap-4">
-                <div>
-                  <span className="block">
-                    候補表示数
+                <div className="flex items-center justify-between overflow-hidden rounded-lg border bg-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMealCount((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={mealCount <= 1}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="作りたい食数を1減らす"
+                  >
+                    −
+                  </button>
+
+                  <span className="min-w-14 border-x px-4 text-center text-lg font-semibold">
+                    {mealCount}
                   </span>
 
-                  <span className="mt-1 block text-xs text-gray-500">
-                    食数より3〜7件多めがおすすめ
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextMealCount = Math.min(14, mealCount + 1);
+
+                      setMealCount(nextMealCount);
+
+                      if (candidateCount < nextMealCount) {
+                        setCandidateCount(nextMealCount);
+                      }
+                    }}
+                    disabled={mealCount >= 14}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="作りたい食数を1増やす"
+                  >
+                    ＋
+                  </button>
                 </div>
+              </div>
 
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={candidateCount}
-                  onChange={(e) => setCandidateCount(Number(e.target.value))}
-                  className="w-24 rounded-lg border bg-white p-2"
-                />
-              </label>
+              {/* 候補表示数 */}
+              <div className="rounded-lg border border-orange-100 bg-orange-50/40 p-3">
+                <p className="mb-1 font-medium">候補表示数</p>
+
+                <div className="flex items-center justify-between overflow-hidden rounded-lg border bg-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCandidateCount((prev) =>
+                        Math.max(mealCount, prev - 1)
+                      )
+                    }
+                    disabled={candidateCount <= mealCount}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="候補表示数を1減らす"
+                  >
+                    −
+                  </button>
+
+                  <span className="min-w-14 border-x px-4 text-center text-lg font-semibold">
+                    {candidateCount}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCandidateCount((prev) => Math.min(20, prev + 1))
+                    }
+                    disabled={candidateCount >= 20}
+                    className="flex h-12 w-12 items-center justify-center text-2xl hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+                    aria-label="候補表示数を1増やす"
+                  >
+                    ＋
+                  </button>
+                </div>
+              </div>
             </div>
 
             <p className="mt-2 text-sm text-gray-500">
-              候補を多めに出して、気に入った献立だけ採用できます。
+              候補表示数は、食数より3〜7件多めがおすすめです。多すぎると選ぶのが大変になります。
             </p>
           </section>
 

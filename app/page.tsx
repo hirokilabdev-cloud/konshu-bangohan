@@ -1431,6 +1431,9 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
+                            const isInStock = stockIngredients
+                              .map((item) => normalizeIngredientName(item))
+                              .includes(normalizeIngredientName(ingredient.name));
                             const isChecked = isIngredientChecked(ingredient);
 
                             return (
@@ -1617,6 +1620,9 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
+                            const isInStock = stockIngredients
+                              .map((item) => normalizeIngredientName(item))
+                              .includes(normalizeIngredientName(ingredient.name));
                             const isChecked = isIngredientChecked(ingredient);
 
                             return (

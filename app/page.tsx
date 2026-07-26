@@ -624,6 +624,10 @@ export default function Home() {
     return groupedShoppingList
       .map((group) => {
         const items = group.ingredients
+          .filter(
+            (ingredient) =>
+              !isIngredientChecked(ingredient)
+          )
           .map(
             (ingredient) =>
               `・${ingredient.name} ${formatAmount(
@@ -633,9 +637,29 @@ export default function Home() {
           )
           .join("\n");
 
+        if (!items) {
+          return "";
+        }
+
         return `【${group.category}】\n${items}`;
       })
+      .filter(Boolean)
       .join("\n\n");
+  };
+
+  /**   * 材料がチェック済みか在庫にあるかを判定する
+   * @param ingredient 
+   * @returns 
+   */
+  const isIngredientChecked = (ingredient: Ingredient) => {
+    const isInStock = stockIngredients
+      .map((item) => normalizeIngredientName(item))
+      .includes(normalizeIngredientName(ingredient.name));
+
+    return (
+      checkedIngredients.includes(ingredient.name) ||
+      isInStock
+    );
   };
 
   const copyShoppingList = async () => {
@@ -1407,11 +1431,7 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
-                            const isInStock = stockIngredients
-                              .map((item) => normalizeIngredientName(item))
-                              .includes(normalizeIngredientName(ingredient.name));
-                            const isChecked =
-                              checkedIngredients.includes(ingredient.name) || isInStock;
+                            const isChecked = isIngredientChecked(ingredient);
 
                             return (
                               <li
@@ -1597,11 +1617,7 @@ export default function Home() {
                       {isOpen && (
                         <ul className="space-y-2">
                           {group.ingredients.map((ingredient) => {
-                            const isInStock = stockIngredients
-                              .map((item) => normalizeIngredientName(item))
-                              .includes(normalizeIngredientName(ingredient.name));
-                            const isChecked =
-                              checkedIngredients.includes(ingredient.name) || isInStock;
+                            const isChecked = isIngredientChecked(ingredient);
 
                             return (
                               <li
